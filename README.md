@@ -65,7 +65,7 @@ As we dig deeper into our dataset, we recognize the stories these images tell. E
 Additionally, we are mindful of the challenges our dataset might present. Some images might be clearer than others, and diseases can sometimes be subtle, making them hard to detect. We acknowledge these hurdles and view them as opportunities for improvement. Our commitment lies in overcoming these challenges. We aim to develop techniques that can handle different levels of image quality and identify diseases even in their early stages when they are not easily visible to the naked eye. By addressing these complexities, we aspire to create a tool that farmers can rely on, irrespective of the conditions they face in their fields.
 
 
-![Class Distribution of plant Spices and Diseases](Visulization_images/image.png)
+![Class Distribution of plant Spices and Diseases](Visualization_Images/image.png)
 
 ## Some of the images used in the model
-![Alt text](Visulization_images/image1.png)
+![Alt text](Visualization_Images/image1.png)
