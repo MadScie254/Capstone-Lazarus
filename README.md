@@ -66,3 +66,6 @@ Additionally, we are mindful of the challenges our dataset might present. Some i
 
 
 ![Class Distribution of plant Spices and Diseases](Visulization_images/image.png)
+
+## some of the images used in the model
+![Alt text](Visulization_images/image1.png)
