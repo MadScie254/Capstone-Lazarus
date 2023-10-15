@@ -1,1 +1,3 @@
 # Capstone--Lazarus
+
+![Plant_Species_Classification_and_Disease_Detection_for_Agricultural_Sustainability.png](attachment:Plant_Species_Classification_and_Disease_Detection_for_Agricultural_Sustainability.png)
