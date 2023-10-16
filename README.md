@@ -91,3 +91,8 @@ Here, the model is compiled with the following configuration:
 **Loss Function:** The categorical crossentropy loss function is used. Categorical crossentropy is commonly used in multi-class classification problems. The from_logits=True argument indicates that the model's output is not normalized (i.e., the raw logits are used), and the softmax activation function will be applied internally during the computation of the loss. This is often used for numerical stability.
 
 **Metrics:** The METRICS variable, which likely contains a list of metrics such as accuracy, precision, recall, etc., is specified as the metrics to be monitored during training. These metrics will be used to evaluate the model's performance during training and validation.
+
+# Model Results
+![Alt text](Visualization_Images/Training.png)
+
+![Alt text](Visualization_Images/Metrics.png)
