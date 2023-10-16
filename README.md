@@ -1,5 +1,7 @@
 # Capstone--Lazarus
-### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254), [Sandra Luyali](),[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech]()
+### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254),,[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech, Sandra Lutali
+
+
 ## Overview
 Agriculture, the cornerstone of global food security, faces a perennial challenge in the form of plant diseases, which adversely impact crop yield, quality, and economic sustainability. One of the critical factors in mitigating these challenges lies in the early detection and accurate classification of diseases affecting plant leaves. Traditionally, disease diagnosis has been a labor-intensive and time-consuming process, often relying on manual inspection by agricultural experts. However, as technology advances, leveraging the power of machine learning and computer vision techniques presents an unprecedented opportunity to revolutionize this essential aspect of agriculture.
 
