@@ -101,3 +101,4 @@ Here, the model is compiled with the following configuration:
 We did a fine-tune to the pre-trained model.
 
 ![Alt text](Visualization_Images/Training_Fine_tuned.png)
+![Alt text](Visualization_Images/Metrics_Fine_Tuned.png)
