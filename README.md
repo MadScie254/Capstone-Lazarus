@@ -69,3 +69,18 @@ Additionally, we are mindful of the challenges our dataset might present. Some i
 
 ## Some of the images used in the model
 ![Alt text](Visualization_Images/image1.png)
+
+## Data Preprocessing
+
+To evaluate the performance of our model on unseen data (test dataset) while training the model on the rest of the data (training dataset), the **validation dataset** will be split into two parts
+
+## Data Augmentation
+To improve model performance, we added some data augmentation.
+
+## metrics for our model
+CategoricalAccuracy
+Precision
+Recall
+AUC
+
+## Baseline Model
