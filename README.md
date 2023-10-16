@@ -99,3 +99,5 @@ Here, the model is compiled with the following configuration:
 
 ## Tuning The model
 We did a fine-tune to the pre-trained model.
+
+![Alt text](Visualization_Images/Training_Fine_tuned.png)
