@@ -81,3 +81,13 @@ To improve model performance, we added some data augmentation.
 CategoricalAccuracy, Precision, Recall, AUC.
 
 ## Baseline Model
+For this modelling, we'll use InceptionResNetV2 model, which is a pre-trained convolutional neural network (CNN) architecture for image recognition.
+
+### Creating an instance of the InceptionResNetV2 model using TensorFlow's Keras API.
+Here, the model is compiled with the following configuration:
+
+**Optimizer:** The Adam optimizer is used. Adam is an adaptive learning rate optimization algorithm that combines the advantages of both AdaGrad and RMSProp. It adjusts the learning rates of each parameter individually, allowing for faster convergence. The learning rate is set to base_learning_rate (0.001 in this case).
+
+**Loss Function:** The categorical crossentropy loss function is used. Categorical crossentropy is commonly used in multi-class classification problems. The from_logits=True argument indicates that the model's output is not normalized (i.e., the raw logits are used), and the softmax activation function will be applied internally during the computation of the loss. This is often used for numerical stability.
+
+**Metrics:** The METRICS variable, which likely contains a list of metrics such as accuracy, precision, recall, etc., is specified as the metrics to be monitored during training. These metrics will be used to evaluate the model's performance during training and validation.
