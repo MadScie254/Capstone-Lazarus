@@ -78,9 +78,6 @@ To evaluate the performance of our model on unseen data (test dataset) while tra
 To improve model performance, we added some data augmentation.
 
 ## metrics for our model
-CategoricalAccuracy
-Precision
-Recall
-AUC
+CategoricalAccuracy, Precision, Recall, AUC.
 
 ## Baseline Model
