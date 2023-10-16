@@ -1,4 +1,11 @@
 # Capstone--Lazarus
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)  ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)  ![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)  ![python](https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue)
+
+
+![Alt text](Visualization_Images/image001.png)
+
+
+
 ### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254),[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech, Sandra Luyali
 
 
