@@ -1,11 +1,11 @@
 # Capstone--Lazarus
-
+### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254), [Sandra Luyali](),[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech]()
 ## Overview
 Agriculture, the cornerstone of global food security, faces a perennial challenge in the form of plant diseases, which adversely impact crop yield, quality, and economic sustainability. One of the critical factors in mitigating these challenges lies in the early detection and accurate classification of diseases affecting plant leaves. Traditionally, disease diagnosis has been a labor-intensive and time-consuming process, often relying on manual inspection by agricultural experts. However, as technology advances, leveraging the power of machine learning and computer vision techniques presents an unprecedented opportunity to revolutionize this essential aspect of agriculture.
 
 ## Problem Statement
 
-Kenya, like many countries, heavily relies on agriculture as a key contributor to its economy, food security, and livelihoods of its people. However, the agricultural sector in Kenya faces several challenges, including the accurate classification of plant species and the early detection of diseases affecting crops. These challenges have a significant impact on crop yield, food production, and overall agricultural sustainability. As such, there is a pressing need for the development and implementation of an AI-based solution to address these issues.
+Kenya, like many countries, heavily relies on agriculture as a key contributor to its economy, food security, and the livelihoods of its people. However, the agricultural sector in Kenya faces several challenges, including the accurate classification of plant species and the early detection of diseases affecting crops. These challenges have a significant impact on crop yield, food production, and overall agricultural sustainability. As such, there is a pressing need for the development and implementation of an AI-based solution to address these issues.
 
 **Justifications**:
 
@@ -77,18 +77,18 @@ To evaluate the performance of our model on unseen data (test dataset) while tra
 ## Data Augmentation
 To improve model performance, we added some data augmentation.
 
-## metrics for our model
+## Metrics for our model
 CategoricalAccuracy, Precision, Recall, AUC.
 
 ## Baseline Model
-For this modelling, we'll use InceptionResNetV2 model, which is a pre-trained convolutional neural network (CNN) architecture for image recognition.
+For this modeling, we'll use the InceptionResNetV2 model, which is a pre-trained convolutional neural network (CNN) architecture for image recognition.
 
 ### Creating an instance of the InceptionResNetV2 model using TensorFlow's Keras API.
 Here, the model is compiled with the following configuration:
 
 **Optimizer:** The Adam optimizer is used. Adam is an adaptive learning rate optimization algorithm that combines the advantages of both AdaGrad and RMSProp. It adjusts the learning rates of each parameter individually, allowing for faster convergence. The learning rate is set to base_learning_rate (0.001 in this case).
 
-**Loss Function:** The categorical crossentropy loss function is used. Categorical crossentropy is commonly used in multi-class classification problems. The from_logits=True argument indicates that the model's output is not normalized (i.e., the raw logits are used), and the softmax activation function will be applied internally during the computation of the loss. This is often used for numerical stability.
+**Loss Function:** The categorical cross-entropy loss function is used. Categorical cross-entropy is commonly used in multi-class classification problems. The from_logits=True argument indicates that the model's output is not normalized (i.e., the raw logits are used), and the softmax activation function will be applied internally during the computation of the loss. This is often used for numerical stability.
 
 **Metrics:** The METRICS variable, which likely contains a list of metrics such as accuracy, precision, recall, etc., is specified as the metrics to be monitored during training. These metrics will be used to evaluate the model's performance during training and validation.
 
