@@ -6,7 +6,7 @@
 
 
 
-### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254),[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech, Sandra Luyali
+### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254), [Bill Kisuya](https://github.com/Musikari), [John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi), [Caren Chepkoech](https://github.com/chepkoechmutai) and [Sandra Luyali](https://github.com/121750)
 
 
 ## Overview
