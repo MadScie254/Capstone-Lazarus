@@ -133,3 +133,15 @@ This project addresses a critical issue in agriculture by leveraging machine lea
 8. **Potential for Scale and Replicability**: The success of this project could serve as a model for similar initiatives in other regions facing similar agricultural challenges.
 
 This AI-based solution has the potential to revolutionize disease detection and plant species classification in Kenyan agriculture, ultimately leading to improved food security, economic prosperity, and environmental sustainability. The engagement of diverse stakeholders and the utilization of advanced technology exemplify a forward-thinking approach to addressing crucial agricultural issues.
+
+## Recommendations
+
+Mobile-Centric Approach: Prioritize mobile app development for widespread accessibility, catering to the majority of farmers who rely on mobile phones.
+
+Scalability for Large Farms: Enhance the model's capability to efficiently cover extensive farm lands, detecting affected areas in large-scale agricultural settings.
+
+Real-Time Monitoring: Implement real-time updates to provide farmers with instant insights into their crops' health, enabling timely interventions.
+
+Localized Recommendations: Offer region-specific advice considering crop types, prevalent diseases, and local climate conditions.
+
+User-Friendly Interface: Ensure an intuitive and user-friendly app interface, accommodating various levels of technological familiarity among farmers.
