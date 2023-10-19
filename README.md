@@ -138,10 +138,13 @@ This AI-based solution has the potential to revolutionize disease detection and 
 
 Mobile-Centric Approach: Prioritize mobile app development for widespread accessibility, catering to the majority of farmers who rely on mobile phones.
 
-Scalability for Large Farms: Enhance the model's capability to efficiently cover extensive farm lands, detecting affected areas in large-scale agricultural settings.
+Scalability for Large Farms: Enhance the model's capability to efficiently cover extensive farmlands, detecting affected areas in large-scale agricultural settings.
 
 Real-Time Monitoring: Implement real-time updates to provide farmers with instant insights into their crops' health, enabling timely interventions.
 
 Localized Recommendations: Offer region-specific advice considering crop types, prevalent diseases, and local climate conditions.
 
 User-Friendly Interface: Ensure an intuitive and user-friendly app interface, accommodating various levels of technological familiarity among farmers.
+
+## Technical Presentation Link -- https://www.canva.com/design/DAFxpgP0thQ/c857OLcBEP71DUjT6CvudQ/view?utm_content=DAFxpgP0thQ&utm_campaign=designshare&utm_medium=link&utm_source=editor
+
