@@ -6,7 +6,7 @@
 
 
 
-### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254),[Bill Kisuya](https://github.com/Musikari),[John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi),Caren Chepkoech, Sandra Luyali
+### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254), [Bill Kisuya](https://github.com/Musikari), [John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi), [Caren Chepkoech](https://github.com/chepkoechmutai) and [Sandra Luyali](https://github.com/121750)
 
 
 ## Overview
@@ -111,3 +111,40 @@ We did a fine-tune to the pre-trained model.
 
 ![Alt text](Visualization_Images/Training_Fine_tuned.png)
 ![Alt text](Visualization_Images/Metrics_Fine_Tuned.png)
+
+##   Conclusion
+
+This project addresses a critical issue in agriculture by leveraging machine learning and computer vision to detect and classify diseases affecting maize, tomato, and potato plants. The significance of this endeavor is underlined by the following key points:
+
+1. **Agricultural Impact**: Agriculture is a vital sector in Kenya's economy, and accurate plant species classification and disease detection are crucial for food security and economic sustainability.
+
+2. **Economic Benefits**: The implementation of this AI-based solution has the potential to significantly reduce economic losses caused by misidentification of plant species and crop diseases. This could lead to improved income for farmers.
+
+3. **Sustainability and Environmental Considerations**: Accurate classification and disease detection contribute to sustainable agriculture by reducing the need for excessive pesticide use and enabling more efficient resource management.
+
+4. **Addressing Labor Shortages**: Automation through AI can help alleviate labor shortages, a common challenge faced by the agricultural sector, especially during peak farming seasons.
+
+5. **Utilizing Local Data**: Leveraging local data specific to the rich diversity of plant species and diseases in Kenya enhances the accuracy and relevance of the AI solution.
+
+6. **Diverse Stakeholder Engagement**: The project involves a wide range of stakeholders, including farmers, government, agricultural organizations, AI developers, and agricultural experts. This collaborative effort ensures a holistic and context-specific approach.
+
+7. **Environmental Impact**: The project aims to reduce the environmental footprint of agriculture by enabling more targeted and efficient use of resources.
+
+8. **Potential for Scale and Replicability**: The success of this project could serve as a model for similar initiatives in other regions facing similar agricultural challenges.
+
+This AI-based solution has the potential to revolutionize disease detection and plant species classification in Kenyan agriculture, ultimately leading to improved food security, economic prosperity, and environmental sustainability. The engagement of diverse stakeholders and the utilization of advanced technology exemplify a forward-thinking approach to addressing crucial agricultural issues.
+
+## Recommendations
+
+Mobile-Centric Approach: Prioritize mobile app development for widespread accessibility, catering to the majority of farmers who rely on mobile phones.
+
+Scalability for Large Farms: Enhance the model's capability to efficiently cover extensive farmlands, detecting affected areas in large-scale agricultural settings.
+
+Real-Time Monitoring: Implement real-time updates to provide farmers with instant insights into their crops' health, enabling timely interventions.
+
+Localized Recommendations: Offer region-specific advice considering crop types, prevalent diseases, and local climate conditions.
+
+User-Friendly Interface: Ensure an intuitive and user-friendly app interface, accommodating various levels of technological familiarity among farmers.
+
+## Technical Presentation Link -- https://www.canva.com/design/DAFxpgP0thQ/c857OLcBEP71DUjT6CvudQ/view?utm_content=DAFxpgP0thQ&utm_campaign=designshare&utm_medium=link&utm_source=editor
+
