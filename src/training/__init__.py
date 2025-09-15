@@ -12,6 +12,7 @@ from .trainer import (
     create_trainer,
     train_with_mixed_precision
 )
+from .tuning import HyperparameterTuner
 
 __all__ = [
     'Trainer',
@@ -21,4 +22,6 @@ __all__ = [
     'CurriculumLearning',
     'create_trainer',
     'train_with_mixed_precision'
+    ,
+    'HyperparameterTuner'
 ]

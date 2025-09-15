@@ -4,7 +4,7 @@
 # ============================================================================
 # Base Stage: Common dependencies
 # ============================================================================
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -33,7 +33,7 @@ WORKDIR /app
 # ============================================================================
 # Dependencies Stage: Install Python packages
 # ============================================================================
-FROM base as dependencies
+FROM base AS dependencies
 
 # Copy requirements first (for better caching)
 COPY requirements.txt .
@@ -45,7 +45,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ============================================================================
 # Development Stage: For development and testing
 # ============================================================================
-FROM dependencies as development
+FROM dependencies AS development
 
 # Install development dependencies
 RUN pip install --no-cache-dir -r requirements-dev.txt
@@ -73,7 +73,7 @@ CMD ["streamlit", "run", "app/streamlit_app/main.py", "--server.port=8501", "--s
 # ============================================================================
 # Production Stage: Optimized for production
 # ============================================================================
-FROM dependencies as production
+FROM dependencies AS production
 
 # Copy only necessary application code
 COPY src/ ./src/
@@ -112,7 +112,7 @@ CMD ["streamlit"]
 # ============================================================================
 # GPU Stage: NVIDIA CUDA support
 # ============================================================================
-FROM nvidia/cuda:11.8-devel-ubuntu22.04 as gpu-base
+FROM nvidia/cuda:11.8-devel-ubuntu22.04 AS gpu-base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -188,7 +188,7 @@ CMD ["streamlit"]
 # ============================================================================
 # Training Stage: Optimized for model training
 # ============================================================================
-FROM gpu-base as training
+FROM gpu-base AS training
 
 # Install additional training dependencies
 USER root
@@ -219,7 +219,7 @@ CMD ["python", "scripts/train_model.py"]
 # ============================================================================
 # Inference Stage: Optimized for model serving
 # ============================================================================
-FROM production as inference
+FROM production AS inference
 
 # Install serving dependencies
 USER root

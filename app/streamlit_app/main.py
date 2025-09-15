@@ -42,7 +42,8 @@ logger = logging.getLogger(__name__)
 
 # Import our ML modules (add repo root to path)
 import sys
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+# Ensure repository root is on sys.path (main.py is app/streamlit_app/main.py)
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.config import Config
 from src.data.etl import DataPipeline
@@ -142,6 +143,41 @@ class StreamlitApp:
         except Exception as e:
             logger.error(f"Error loading models: {e}")
             self.available_models = []
+
+    def _map_selected_model(self, selected_model: str) -> Tuple[str, dict]:
+        """Map UI-selected model name to factory architecture and kwargs.
+
+        Returns (architecture, kwargs) where architecture matches ModelFactory
+        and kwargs may include 'variant' and 'pretrained'.
+        """
+        sm = selected_model.lower()
+        # Defaults
+        arch = "efficient_net"
+        kwargs: dict = {}
+        if sm.startswith("efficientnetb"):
+            arch = "efficient_net"
+            kwargs["variant"] = selected_model[-2:]  # e.g., B0, B3, B7 -> last two chars
+        elif sm.startswith("resnet"):
+            arch = "resnet"
+            kwargs["variant"] = selected_model.replace("ResNet", "")
+        elif sm.startswith("mobilenetv3"):
+            arch = "mobilenet"
+            kwargs["variant"] = "V3Small" if "small" in sm else "V3Large"
+        elif sm.startswith("mobilenetv2"):
+            arch = "mobilenet"
+            kwargs["variant"] = "V2"
+        elif sm.startswith("vit-"):
+            arch = "vit"
+            kwargs["variant"] = selected_model.split("-", 1)[-1]
+        elif sm == "custom-cnn":
+            arch = "custom_cnn"
+        elif sm == "custom-mlp":
+            arch = "mlp"
+        else:
+            # Fallback to EfficientNetB0
+            arch = "efficient_net"
+            kwargs["variant"] = "B0"
+        return arch, kwargs
     
     def run(self):
         """Main application runner"""
@@ -578,12 +614,14 @@ class StreamlitApp:
                     self.config.model.num_classes = num_classes
                     self.config.model.dropout_rate = dropout_rate
                     
-                    # Build model
+                    # Map UI selection to factory API and build model
+                    architecture, extra_kwargs = self._map_selected_model(selected_model)
+                    extra_kwargs["pretrained"] = bool(use_pretrained)
                     model = self.model_factory.create_model(
-                        architecture=selected_model,
+                        architecture=architecture,
                         input_shape=(input_size, input_size, 3),
                         num_classes=num_classes,
-                        use_pretrained=use_pretrained
+                        **extra_kwargs
                     )
                     
                     # Store in session state
