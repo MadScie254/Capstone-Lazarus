@@ -1,0 +1,130 @@
+# CAPSTONE-LAZARUS Default Configuration
+# =====================================
+
+# Project settings
+project_name: "capstone-lazarus"
+task: "classification"  # classification, regression
+random_seed: 42
+device: "auto"  # auto, cpu, gpu
+
+# Data processing configuration
+data:
+  batch_size: 32
+  validation_split: 0.2
+  test_split: 0.1
+  image_size: [224, 224]
+  augmentation: true
+  normalize: true
+  cache: true
+  prefetch_buffer: 1000
+  shuffle_buffer: 10000
+
+# Model architecture configuration
+model:
+  architecture: "efficient_net"
+  num_classes: 10
+  input_shape: [224, 224, 3]
+  dropout_rate: 0.2
+  l2_regularization: 0.0001
+  use_mixed_precision: true
+  enable_pruning: false
+  enable_quantization: false
+
+# Training configuration
+training:
+  epochs: 100
+  learning_rate: 0.001
+  optimizer: "adam"
+  loss_function: "categorical_crossentropy"
+  metrics: ["accuracy", "top_5_accuracy"]
+  early_stopping_patience: 10
+  reduce_lr_patience: 5
+  save_best_only: true
+  checkpoint_frequency: 5
+  use_mixed_precision: true
+  gradient_clip_norm: null
+
+# Neural Architecture Search
+nas:
+  enabled: false
+  search_space: "mobile_net"
+  max_epochs: 50
+  num_trials: 100
+  objective_metric: "val_accuracy"
+  pruning_enabled: true
+
+# Federated learning configuration
+federated:
+  enabled: false
+  num_rounds: 10
+  num_clients: 5
+  fraction_fit: 1.0
+  fraction_eval: 1.0
+  min_fit_clients: 2
+  min_eval_clients: 2
+  min_available_clients: 2
+
+# Differential Privacy configuration
+differential_privacy:
+  enabled: false
+  l2_norm_clip: 1.0
+  noise_multiplier: 1.1
+  num_microbatches: 1
+  learning_rate: 0.15
+  delta: 0.00001
+
+# Monitoring and observability
+monitoring:
+  drift_detection: true
+  drift_threshold: 0.05
+  prometheus_enabled: false
+  prometheus_port: 8000
+  log_level: "INFO"
+  metrics_collection: true
+
+# MLflow experiment tracking
+mlflow:
+  enabled: true
+  tracking_uri: "file:./experiments/mlruns"
+  experiment_name: "capstone_lazarus"
+  artifact_location: "./experiments/artifacts"
+  log_models: true
+  log_artifacts: true
+
+# Weights & Biases configuration
+wandb:
+  enabled: false
+  project: "capstone-lazarus"
+  entity: null
+  api_key_env: "WANDB_API_KEY"
+
+# Model explainability configuration
+explainability:
+  shap_enabled: true
+  integrated_gradients: true
+  counterfactuals: true
+  feature_importance: true
+  max_samples_explain: 100
+
+# Security and privacy configuration
+security:
+  use_vault: false
+  vault_url: null
+  encrypt_artifacts: false
+  audit_logging: true
+
+# Docker deployment configuration
+docker:
+  base_image: "tensorflow/tensorflow:2.20.0"
+  gpu_image: "tensorflow/tensorflow:2.20.0-gpu"
+  port: 8501
+  workers: 1
+  memory_limit: "4G"
+  cpu_limit: "2"
+
+# Paths (relative to project root)
+paths:
+  data_dir: "data"
+  models_dir: "models"
+  experiments_dir: "experiments"
+  logs_dir: "logs"

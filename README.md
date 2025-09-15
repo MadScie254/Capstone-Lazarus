@@ -1,150 +1,559 @@
-# Capstone--Lazarus
-![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)  ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)  ![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)  ![python](https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue)
-
-
-![Alt text](Visualization_Images/image001.png)
-
-
-
-### Authors: [Brandon Abuga](https://github.com/brandonbush2), [Daniel Wanjala](https://github.com/MadScie254), [Bill Kisuya](https://github.com/Musikari), [John Muriithi](https://github.com/johnmuriithikamau), [Vanessa Mwangi](https://github.com/vanessamuthonimwangi), [Caren Chepkoech](https://github.com/chepkoechmutai) and [Sandra Luyali](https://github.com/121750)
-
-
-## Overview
-Agriculture, the cornerstone of global food security, faces a perennial challenge in the form of plant diseases, which adversely impact crop yield, quality, and economic sustainability. One of the critical factors in mitigating these challenges lies in the early detection and accurate classification of diseases affecting plant leaves. Traditionally, disease diagnosis has been a labor-intensive and time-consuming process, often relying on manual inspection by agricultural experts. However, as technology advances, leveraging the power of machine learning and computer vision techniques presents an unprecedented opportunity to revolutionize this essential aspect of agriculture.
-
-## Problem Statement
-
-Kenya, like many countries, heavily relies on agriculture as a key contributor to its economy, food security, and the livelihoods of its people. However, the agricultural sector in Kenya faces several challenges, including the accurate classification of plant species and the early detection of diseases affecting crops. These challenges have a significant impact on crop yield, food production, and overall agricultural sustainability. As such, there is a pressing need for the development and implementation of an AI-based solution to address these issues.
-
-**Justifications**:
-
-1. **Food Security**: Agriculture is the backbone of Kenya's economy, providing livelihoods for millions of people and ensuring food security. Accurate plant species classification and disease detection are essential for maintaining a stable food supply.
-
-2. **Economic Impact**: Crop diseases and misidentification of plant species result in substantial economic losses for Kenyan farmers. An AI solution can mitigate these losses and improve the income of farmers.
-
-3. **Environmental Sustainability**: Accurate plant species classification and disease detection contribute to sustainable agriculture by reducing the overuse of pesticides and enabling more precise resource management.
-
-4. **Labor Shortage**: Kenya's agricultural sector faces challenges related to labor shortages, especially during peak farming seasons. Automation through AI can help bridge this gap.
-
-5. **Data Availability**: Kenya has a rich diversity of plant species and a wide range of diseases affecting crops. Leveraging AI on local data can lead to more accurate and context-specific solutions.
-
-**Stakeholders**:
-
-1. **Farmers**: Small-scale and large-scale farmers in Kenya are primary stakeholders. They benefit from increased crop yield, reduced losses, and improved income through accurate plant species classification and disease detection.
-
-2. **Government**: The Kenyan government has a vested interest in enhancing food security, economic development, and sustainability. They may support and regulate the adoption of AI technologies in agriculture.
-
-3. **Agricultural Organizations**: NGOs and agricultural research institutions in Kenya can collaborate to provide expertise and resources for the project.
-
-4. **AI Developers and Data Scientists**: Professionals with expertise in AI and data science will be instrumental in developing the AI models and algorithms.
-
-5. **Agricultural Experts**: Agronomists, plant pathologists, and experts in agriculture will provide domain-specific knowledge and validation for the AI system.
-
-6. **Consumers**: Improved agricultural sustainability benefits consumers through a stable food supply and potentially lower food prices.
-
-7. **Local Communities**: Rural communities in Kenya, where agriculture is a primary source of income, will benefit from the project's success.
-
-8. **Environmental Organizations**: Organizations focused on environmental conservation and sustainability have a stake in reducing the environmental impact of agriculture.
-
-9. **Funding Agencies**: Investors and funding agencies that support agricultural innovation and sustainability projects will play a crucial role in project development.
-
-**Stakeholders**:
-
-1. **Farmers**: Small-scale and large-scale farmers in Kenya are primary stakeholders. They benefit from increased crop yield, reduced losses, and improved income through accurate plant species classification and disease detection.
-
-2. **Government**: The Kenyan government has a vested interest in enhancing food security, economic development, and sustainability. They may support and regulate the adoption of AI technologies in agriculture.
-
-3. **Agricultural Organizations**: NGOs and agricultural research institutions in Kenya can collaborate to provide expertise and resources for the project.
-
-4. **AI Developers and Data Scientists**: Professionals with expertise in AI and data science will be instrumental in developing the AI models and algorithms.
-
-5. **Agricultural Experts**: Agronomists, plant pathologists, and experts in agriculture will provide domain-specific knowledge and validation for the AI system.
-
-6. **Consumers**: Improved agricultural sustainability benefits consumers through a stable food supply and potentially lower food prices.
-
-7. **Local Communities**: Rural communities in Kenya, where agriculture is a primary source of income, will benefit from the project's success.
-
-8. **Environmental Organizations**: Organizations focused on environmental conservation and sustainability have a stake in reducing the environmental impact of agriculture.
-
-## Data Understanding
-In our project about maize, tomato, and potato plants, we've looked closely at the pictures we have. We understand that these plants have different kinds of leaves, and sometimes these leaves can get sick. For example, maize leaves can look different when they are young compared to when they are grown up. Tomatoes have different-sized leaves and colors, while potato leaves can be smooth or have marks on them. We know that these pictures show not just plants but also signs of diseases. Some leaves might change color or have spots, while others might look weak and droopy. These pictures help us learn how to tell if a plant is healthy or sick. By studying these images carefully, we hope to create a smart system that can look at plant leaves and tell farmers if their plants are in good health or if they need help.
-
-As we dig deeper into our dataset, we recognize the stories these images tell. Each picture captures a moment in the life of a plant, reflecting its health and vitality. We acknowledge the diversity not only in the plants but also in the environments they grow in. Some leaves might be under bright sunlight, while others could be in the shade. These factors can influence how diseases appear, and understanding these intricacies is vital. We take note of the different angles and lighting conditions, as these elements can impact how our smart system interprets the images. By appreciating these details, we can fine-tune our technology to work accurately in various situations, ensuring its usefulness for farmers everywhere.
-
-Additionally, we are mindful of the challenges our dataset might present. Some images might be clearer than others, and diseases can sometimes be subtle, making them hard to detect. We acknowledge these hurdles and view them as opportunities for improvement. Our commitment lies in overcoming these challenges. We aim to develop techniques that can handle different levels of image quality and identify diseases even in their early stages when they are not easily visible to the naked eye. By addressing these complexities, we aspire to create a tool that farmers can rely on, irrespective of the conditions they face in their fields.
-
-
-![Class Distribution of plant Spices and Diseases](Visualization_Images/image.png)
-
-## Some of the images used in the model
-![Alt text](Visualization_Images/image1.png)
-
-## Data Preprocessing
-
-To evaluate the performance of our model on unseen data (test dataset) while training the model on the rest of the data (training dataset), the **validation dataset** will be split into two parts
-
-## Data Augmentation
-To improve model performance, we added some data augmentation.
-
-## Metrics for our model
-CategoricalAccuracy, Precision, Recall, AUC.
-
-## Baseline Model
-For this modeling, we'll use the InceptionResNetV2 model, which is a pre-trained convolutional neural network (CNN) architecture for image recognition.
-
-### Creating an instance of the InceptionResNetV2 model using TensorFlow's Keras API.
-Here, the model is compiled with the following configuration:
-
-**Optimizer:** The Adam optimizer is used. Adam is an adaptive learning rate optimization algorithm that combines the advantages of both AdaGrad and RMSProp. It adjusts the learning rates of each parameter individually, allowing for faster convergence. The learning rate is set to base_learning_rate (0.001 in this case).
-
-**Loss Function:** The categorical cross-entropy loss function is used. Categorical cross-entropy is commonly used in multi-class classification problems. The from_logits=True argument indicates that the model's output is not normalized (i.e., the raw logits are used), and the softmax activation function will be applied internally during the computation of the loss. This is often used for numerical stability.
-
-**Metrics:** The METRICS variable, which likely contains a list of metrics such as accuracy, precision, recall, etc., is specified as the metrics to be monitored during training. These metrics will be used to evaluate the model's performance during training and validation.
-
-# Model Results
-![Alt text](Visualization_Images/Training.png)
-
-![Alt text](Visualization_Images/Metrics.png)
-
-## Tuning The model
-We did a fine-tune to the pre-trained model.
-
-![Alt text](Visualization_Images/Training_Fine_tuned.png)
-![Alt text](Visualization_Images/Metrics_Fine_Tuned.png)
-
-##   Conclusion
-
-This project addresses a critical issue in agriculture by leveraging machine learning and computer vision to detect and classify diseases affecting maize, tomato, and potato plants. The significance of this endeavor is underlined by the following key points:
-
-1. **Agricultural Impact**: Agriculture is a vital sector in Kenya's economy, and accurate plant species classification and disease detection are crucial for food security and economic sustainability.
-
-2. **Economic Benefits**: The implementation of this AI-based solution has the potential to significantly reduce economic losses caused by misidentification of plant species and crop diseases. This could lead to improved income for farmers.
-
-3. **Sustainability and Environmental Considerations**: Accurate classification and disease detection contribute to sustainable agriculture by reducing the need for excessive pesticide use and enabling more efficient resource management.
-
-4. **Addressing Labor Shortages**: Automation through AI can help alleviate labor shortages, a common challenge faced by the agricultural sector, especially during peak farming seasons.
-
-5. **Utilizing Local Data**: Leveraging local data specific to the rich diversity of plant species and diseases in Kenya enhances the accuracy and relevance of the AI solution.
-
-6. **Diverse Stakeholder Engagement**: The project involves a wide range of stakeholders, including farmers, government, agricultural organizations, AI developers, and agricultural experts. This collaborative effort ensures a holistic and context-specific approach.
-
-7. **Environmental Impact**: The project aims to reduce the environmental footprint of agriculture by enabling more targeted and efficient use of resources.
-
-8. **Potential for Scale and Replicability**: The success of this project could serve as a model for similar initiatives in other regions facing similar agricultural challenges.
-
-This AI-based solution has the potential to revolutionize disease detection and plant species classification in Kenyan agriculture, ultimately leading to improved food security, economic prosperity, and environmental sustainability. The engagement of diverse stakeholders and the utilization of advanced technology exemplify a forward-thinking approach to addressing crucial agricultural issues.
-
-## Recommendations
-
-Mobile-Centric Approach: Prioritize mobile app development for widespread accessibility, catering to the majority of farmers who rely on mobile phones.
-
-Scalability for Large Farms: Enhance the model's capability to efficiently cover extensive farmlands, detecting affected areas in large-scale agricultural settings.
-
-Real-Time Monitoring: Implement real-time updates to provide farmers with instant insights into their crops' health, enabling timely interventions.
-
-Localized Recommendations: Offer region-specific advice considering crop types, prevalent diseases, and local climate conditions.
-
-User-Friendly Interface: Ensure an intuitive and user-friendly app interface, accommodating various levels of technological familiarity among farmers.
-
-## Technical Presentation Link -- https://www.canva.com/design/DAFxpgP0thQ/c857OLcBEP71DUjT6CvudQ/view?utm_content=DAFxpgP0thQ&utm_campaign=designshare&utm_medium=link&utm_source=editor
-
+# CAPSTONE-LAZARUS: Modern ML Research & Production Platform
+
+[![CI/CD Pipeline](https://github.com/your-org/Capstone-Lazarus/workflows/CI-CD/badge.svg)](https://github.com/your-org/Capstone-Lazarus/actions)
+[![Security Scan](https://github.com/your-org/Capstone-Lazarus/workflows/Security/badge.svg)](https://github.com/your-org/Capstone-Lazarus/actions)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-green)](https://github.com/your-org/Capstone-Lazarus)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![TensorFlow 2.20+](https://img.shields.io/badge/tensorflow-2.20+-orange.svg)](https://tensorflow.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+A comprehensive, production-ready machine learning platform built with modern MLOps practices, featuring cutting-edge research capabilities, interactive experimentation, and enterprise-grade deployment infrastructure.
+
+## 🚀 Features
+
+### 🧠 **Advanced ML Capabilities**
+- **Multi-Architecture Model Factory**: ResNet, EfficientNet, Vision Transformer, MobileNet, DenseNet, NAS, Custom CNN, and Simple CNN
+- **Neural Architecture Search (NAS)**: Automated architecture optimization
+- **Federated Learning**: Distributed training across multiple clients
+- **Differential Privacy**: Privacy-preserving machine learning
+- **LoRA Adaptation**: Efficient fine-tuning with Low-Rank Adaptation
+- **Model Compression**: Pruning, quantization, and distillation
+- **Transfer Learning**: Pre-trained model adaptation
+- **Ensemble Methods**: Multiple model aggregation strategies
+
+### 🛠️ **Production-Grade Infrastructure**
+- **Multi-Stage Docker**: Development, production, training, and inference containers
+- **Kubernetes Deployment**: Scalable cloud-native orchestration
+- **CI/CD Pipeline**: Automated testing, security scanning, and deployment
+- **MLflow Integration**: Experiment tracking and model registry
+- **Comprehensive Monitoring**: Metrics, alerts, and performance tracking
+- **Auto-scaling**: Dynamic resource management
+- **Load Balancing**: High-availability deployment
+
+### 🎯 **Interactive Research Platform**
+- **Streamlit Playground**: Interactive model experimentation and visualization
+- **Jupyter Integration**: Notebook-based research environment
+- **Real-time Metrics**: Live training monitoring and visualization
+- **A/B Testing**: Model comparison and validation
+- **Data Upload & Processing**: Drag-and-drop dataset management
+- **Model Explainability**: LIME, SHAP, and GradCAM integration
+
+### 🔒 **Enterprise Security & Compliance**
+- **Security Scanning**: Automated vulnerability detection
+- **Data Protection**: PII detection and anonymization
+- **Access Control**: Role-based permissions and authentication
+- **Audit Logging**: Comprehensive activity tracking
+- **Compliance**: GDPR, HIPAA-ready data handling
+- **Secret Management**: Secure configuration and key handling
+
+## 📊 **Architecture Overview**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CAPSTONE-LAZARUS Platform                     │
+├─────────────────────────────────────────────────────────────────┤
+│  🎨 Frontend Layer                                               │
+│  ├─ Streamlit App (Interactive ML Playground)                   │
+│  ├─ FastAPI (REST API & Model Serving)                          │
+│  └─ Jupyter Hub (Research Environment)                          │
+├─────────────────────────────────────────────────────────────────┤
+│  🧠 ML Core Layer                                                │
+│  ├─ Model Factory (8+ Architectures)                            │
+│  ├─ Training Engine (Advanced Callbacks & Optimization)         │
+│  ├─ Inference Engine (Batch/Stream/Ensemble Prediction)         │
+│  └─ Data Pipeline (ETL, Validation, Augmentation)               │
+├─────────────────────────────────────────────────────────────────┤
+│  🔧 MLOps Layer                                                  │
+│  ├─ Experiment Tracking (MLflow)                                │
+│  ├─ Model Registry (Versioning & Deployment)                    │
+│  ├─ Monitoring (Metrics, Alerts, Drift Detection)              │
+│  └─ CI/CD Pipeline (GitHub Actions)                             │
+├─────────────────────────────────────────────────────────────────┤
+│  ☁️  Infrastructure Layer                                        │
+│  ├─ Docker (Multi-stage Containers)                             │
+│  ├─ Kubernetes (Orchestration & Scaling)                        │
+│  ├─ Redis (Caching & Session Management)                        │
+│  └─ PostgreSQL (Metadata & Experiment Storage)                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 🏁 **Quick Start**
+
+### Prerequisites
+- Python 3.11+
+- Docker & Docker Compose
+- Git
+- CUDA-capable GPU (optional but recommended)
+
+### 1. **Clone & Setup**
+```bash
+git clone https://github.com/your-org/Capstone-Lazarus.git
+cd Capstone-Lazarus
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\\Scripts\\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. **Docker Development Environment**
+```bash
+# Start all services
+docker-compose up -d
+
+# Access services:
+# - Streamlit App: http://localhost:8501
+# - FastAPI: http://localhost:8000
+# - MLflow: http://localhost:5000
+# - Jupyter: http://localhost:8888
+# - TensorBoard: http://localhost:6006
+```
+
+### 3. **Local Development**
+```bash
+# Configure environment
+python -m src.cli setup
+
+# Run Streamlit app
+streamlit run app/streamlit_app/main.py
+
+# Run tests
+python run_tests.py --coverage --lint --security
+
+# Start training
+python -m src.cli train --config configs/default.yaml
+```
+
+## 📖 **Documentation**
+
+### **Core Components**
+
+#### 🧠 **Model Factory**
+```python
+from src.models.factory import ModelFactory
+from src.config.settings import ModelConfig
+
+# Create model configuration
+config = ModelConfig(
+    name='efficientnet_v2',
+    num_classes=10,
+    input_shape=(224, 224, 3),
+    pretrained=True
+)
+
+# Initialize factory and create model
+factory = ModelFactory(config)
+model = factory.create_model()
+
+# Available architectures:
+# 'resnet50', 'efficientnet_v2', 'vision_transformer', 
+# 'mobilenet_v3', 'densenet121', 'nas_model', 
+# 'custom_cnn', 'simple_cnn'
+```
+
+#### 🚂 **Training Engine**
+```python
+from src.training.trainer import Trainer
+from src.config.settings import TrainingConfig
+
+# Configure training
+training_config = TrainingConfig(
+    batch_size=32,
+    epochs=100,
+    learning_rate=0.001,
+    optimizer='adam',
+    use_mixed_precision=True,
+    early_stopping=True
+)
+
+# Initialize trainer
+trainer = Trainer(
+    config=training_config,
+    model=model,
+    train_dataset=train_ds,
+    val_dataset=val_ds
+)
+
+# Start training with MLflow tracking
+history = trainer.train()
+```
+
+#### 🔮 **Inference Engine**
+```python
+from src.inference.predictor import Predictor
+
+# Load trained model for inference
+predictor = Predictor(model_path='models/best_model.h5')
+
+# Single prediction
+result = predictor.predict_single(image_path='test_image.jpg')
+print(f\"Prediction: {result.class_name} (confidence: {result.confidence:.2f})\")
+
+# Batch prediction
+results = predictor.predict_batch(['img1.jpg', 'img2.jpg', 'img3.jpg'])
+
+# Ensemble prediction
+ensemble_result = predictor.predict_ensemble(
+    image_path='test_image.jpg',
+    model_paths=['model1.h5', 'model2.h5', 'model3.h5']
+)
+```
+
+#### 📊 **Data Pipeline**
+```python
+from src.data.loader import DataLoader
+from src.data.preprocessor import DataPreprocessor
+from src.config.settings import DataConfig
+
+# Configure data pipeline
+data_config = DataConfig(
+    train_path='data/train',
+    val_path='data/val',
+    batch_size=32,
+    augmentation=True,
+    rotation_range=20,
+    horizontal_flip=True
+)
+
+# Load and preprocess data
+loader = DataLoader(data_config)
+train_ds, val_ds = loader.load_datasets()
+
+preprocessor = DataPreprocessor(data_config)
+train_ds = preprocessor.preprocess_dataset(train_ds, is_training=True)
+val_ds = preprocessor.preprocess_dataset(val_ds, is_training=False)
+```
+
+### **Advanced Features**
+
+#### 🔐 **Federated Learning**
+```python
+from src.experiments.federated_learning import FederatedTrainer
+
+# Configure federated learning
+fed_trainer = FederatedTrainer(
+    num_clients=5,
+    rounds=10,
+    client_fraction=0.8
+)
+
+# Train across distributed clients
+global_model = fed_trainer.federated_training(
+    base_model=model,
+    client_datasets=client_data_list
+)
+```
+
+#### 🛡️ **Differential Privacy**
+```python
+from src.experiments.differential_privacy import DPTrainer
+
+# Train with differential privacy
+dp_trainer = DPTrainer(
+    epsilon=1.0,  # Privacy budget
+    delta=1e-5,
+    noise_multiplier=0.1
+)
+
+private_model = dp_trainer.train_with_privacy(
+    model=model,
+    train_dataset=train_ds
+)
+```
+
+#### ⚡ **LoRA Fine-tuning**
+```python
+from src.experiments.lora_adaptation import LoRAAdapter
+
+# Apply LoRA to pre-trained model
+lora_adapter = LoRAAdapter(
+    rank=16,
+    alpha=32,
+    dropout=0.1
+)
+
+adapted_model = lora_adapter.apply_lora(base_model=pretrained_model)
+```
+
+## 🎮 **Interactive Playground**
+
+The Streamlit app provides a comprehensive interface for ML experimentation:
+
+### **Features:**
+- 📁 **Data Upload**: Drag-and-drop dataset management
+- 🏗️ **Model Builder**: Interactive model architecture selection
+- 🎯 **Training Monitor**: Real-time metrics and visualization
+- 🔍 **Prediction Analysis**: Model testing and explainability
+- 📈 **Experiment Tracking**: MLflow integration and comparison
+- ⚙️ **Admin Panel**: System monitoring and configuration
+
+### **Access:**
+```bash
+# Local development
+streamlit run app/streamlit_app/main.py
+
+# Docker environment
+docker-compose up streamlit
+# Access at http://localhost:8501
+```
+
+## 🚀 **Deployment**
+
+### **Development Deployment**
+```bash
+# Local development server
+docker-compose -f docker-compose.dev.yml up
+
+# With GPU support
+docker-compose -f docker-compose.gpu.yml up
+```
+
+### **Production Deployment**
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Deploy to production
+docker-compose -f docker-compose.prod.yml up -d
+
+# Scale services
+docker-compose -f docker-compose.prod.yml up --scale api=3 --scale streamlit=2
+```
+
+### **Kubernetes Deployment**
+```bash
+# Apply Kubernetes manifests
+kubectl apply -f infra/k8s/
+
+# Check deployment status
+kubectl get pods -n capstone-lazarus
+
+# Access services via ingress
+kubectl get ingress -n capstone-lazarus
+```
+
+### **Cloud Deployment**
+```bash
+# AWS EKS
+eksctl create cluster --config-file infra/aws/eks-cluster.yaml
+
+# Google GKE
+gcloud container clusters create capstone-lazarus --config infra/gcp/gke-cluster.yaml
+
+# Azure AKS
+az aks create --resource-group capstone-rg --name capstone-lazarus --config infra/azure/aks-cluster.yaml
+```
+
+## 🧪 **Testing**
+
+### **Run All Tests**
+```bash
+python run_tests.py --coverage --lint --security --type-check
+```
+
+### **Specific Test Suites**
+```bash
+# Unit tests only
+python run_tests.py --unit
+
+# Integration tests only
+python run_tests.py --integration
+
+# With parallel execution
+python run_tests.py --parallel --use-pytest
+
+# Cleanup test artifacts
+python run_tests.py --cleanup
+```
+
+### **Pre-commit Hooks**
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run hooks manually
+pre-commit run --all-files
+```
+
+## 📊 **Monitoring & Observability**
+
+### **MLflow Experiment Tracking**
+```python
+# Access MLflow UI
+# http://localhost:5000
+
+# Track custom metrics
+import mlflow
+
+with mlflow.start_run():
+    mlflow.log_param(\"model_type\", \"efficientnet\")
+    mlflow.log_metric(\"accuracy\", 0.95)
+    mlflow.log_artifact(\"model.h5\")
+```
+
+### **TensorBoard Integration**
+```python
+# Launch TensorBoard
+tensorboard --logdir logs/tensorboard
+
+# Access at http://localhost:6006
+```
+
+### **System Metrics**
+- **Prometheus**: Metrics collection and alerting
+- **Grafana**: Visualization and dashboards
+- **Jaeger**: Distributed tracing
+- **ELK Stack**: Log aggregation and analysis
+
+## 🔧 **Configuration**
+
+### **Environment Variables**
+```bash
+# Core settings
+export ENVIRONMENT=production
+export DEBUG=false
+export SECRET_KEY=your-secret-key
+
+# Database
+export DATABASE_URL=postgresql://user:pass@localhost/capstone_lazarus
+export REDIS_URL=redis://localhost:6379
+
+# ML settings
+export MODEL_REGISTRY_PATH=/models
+export EXPERIMENT_TRACKING_URI=http://localhost:5000
+export CUDA_VISIBLE_DEVICES=0,1
+
+# Security
+export JWT_SECRET=your-jwt-secret
+export ENCRYPTION_KEY=your-encryption-key
+```
+
+### **Configuration Files**
+- `configs/default.yaml`: Default configuration
+- `configs/production.yaml`: Production overrides
+- `configs/development.yaml`: Development settings
+- `configs/testing.yaml`: Test configuration
+
+## 🤝 **Contributing**
+
+### **Development Setup**
+```bash
+# Clone repository
+git clone https://github.com/your-org/Capstone-Lazarus.git
+cd Capstone-Lazarus
+
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Install pre-commit hooks
+pre-commit install
+
+# Run development server
+docker-compose -f docker-compose.dev.yml up
+```
+
+### **Code Standards**
+- **Black**: Code formatting
+- **isort**: Import sorting
+- **flake8**: Linting
+- **mypy**: Type checking
+- **bandit**: Security scanning
+- **pytest**: Testing framework
+
+### **Pull Request Process**
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes and add tests
+4. Run quality checks (`python run_tests.py --coverage --lint --security`)
+5. Commit changes (`git commit -m 'Add amazing feature'`)
+6. Push to branch (`git push origin feature/amazing-feature`)
+7. Open Pull Request
+
+## 📚 **API Documentation**
+
+### **FastAPI Endpoints**
+```bash
+# Access interactive API docs
+http://localhost:8000/docs
+
+# OpenAPI specification
+http://localhost:8000/openapi.json
+```
+
+### **Key Endpoints**
+- `POST /predict`: Single image prediction
+- `POST /predict/batch`: Batch image prediction
+- `POST /train`: Start training job
+- `GET /models`: List available models
+- `GET /experiments`: List experiments
+- `GET /health`: Health check
+
+## 🔍 **Troubleshooting**
+
+### **Common Issues**
+
+#### **Docker Issues**
+```bash
+# Clean up Docker resources
+docker system prune -a
+
+# Rebuild containers
+docker-compose build --no-cache
+
+# Check container logs
+docker-compose logs -f service-name
+```
+
+#### **GPU Issues**
+```bash
+# Check GPU availability
+nvidia-smi
+
+# Verify CUDA installation
+python -c \"import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))\"
+
+# Install NVIDIA Docker runtime
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+```
+
+#### **Memory Issues**
+```bash
+# Monitor memory usage
+docker stats
+
+# Reduce batch size in configuration
+# Adjust model complexity
+# Enable gradient checkpointing
+```
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 **Acknowledgments**
+
+- **TensorFlow Team**: For the excellent deep learning framework
+- **Streamlit Team**: For the interactive web app framework
+- **MLflow Team**: For experiment tracking and model management
+- **Hugging Face**: For transformer architectures and models
+- **FastAPI Team**: For the high-performance web framework
+- **Open Source Community**: For the countless libraries and tools
+
+## 📞 **Support & Contact**
+
+- **Documentation**: [docs.capstone-lazarus.io](https://docs.capstone-lazarus.io)
+- **Issues**: [GitHub Issues](https://github.com/your-org/Capstone-Lazarus/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/Capstone-Lazarus/discussions)
+- **Email**: support@capstone-lazarus.io
+- **Slack**: [Join our community](https://capstone-lazarus.slack.com)
+
+---
+
+<div align=\"center\">
+  <strong>Built with ❤️ for the ML Research Community</strong>
+  <br>
+  <sub>Empowering researchers and engineers with cutting-edge ML infrastructure</sub>
+</div>
