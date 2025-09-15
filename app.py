@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 import tensorflow as tf
-import plotly.express as px@st.cache_resource
+import plotly.express as px
+
+@st.cache_resource
 def load_model():
     """Load the trained model with caching - Keras 3 compatible"""
     try:
@@ -19,7 +21,9 @@ def load_model():
             return model
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
-        return Nonelotly.graph_objects as go
+        return None
+
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import matplotlib.pyplot as plt
 import seaborn as sns
