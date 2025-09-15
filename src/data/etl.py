@@ -353,7 +353,15 @@ class PlantDiseaseDataPipeline:
         if tf.random.uniform([]) < 0.1:
             # Add slight blur (simulate motion or focus issues)
             kernel_size = tf.random.uniform([], 1, 3, dtype=tf.int32)
-            image = tf.image.gaussian_blur(image, [kernel_size, kernel_size], [0.5, 0.5])
+            try:
+                # Some TF versions may not have gaussian_blur
+                image = tf.image.gaussian_blur(image, [kernel_size, kernel_size], [0.5, 0.5])
+            except Exception:
+                # Fallback: average pooling as mild blur
+                k = tf.maximum(kernel_size, 1)
+                k = tf.cast(k, tf.int32)
+                image = tf.nn.avg_pool2d(tf.expand_dims(image, 0), ksize=k, strides=1, padding='SAME')
+                image = tf.squeeze(image, 0)
         
         return image
     
@@ -387,3 +395,15 @@ class PlantDiseaseDataPipeline:
     def get_class_weights(self) -> Dict[int, float]:
         """Get calculated class weights"""
         return self.class_weights or {}
+
+
+# Backward-compatible wrapper expected by the app and CLI
+class DataPipeline(PlantDiseaseDataPipeline):
+    """Compatibility wrapper around PlantDiseaseDataPipeline.
+
+    Exposes prepare_datasets(data_path) used by existing callers and
+    delegates to the plant-disease-aware implementation.
+    """
+
+    def prepare_datasets(self, data_path: str) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
+        return self.prepare_plant_disease_datasets(data_path)

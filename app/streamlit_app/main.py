@@ -16,33 +16,49 @@ Features:
 
 import streamlit as st
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 import pandas as pd
-import cv2
-from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import json
+import cv2
+from PIL import Image
 import io
-import os
-from pathlib import Path
-import requests
-from datetime import datetime, timedelta
-import tempfile
+import json
 import logging
+from pathlib import Path
+import time
+from typing import Dict, List, Any, Optional, Tuple
+import base64
+from datetime import datetime, timedelta
+import os
+import tempfile
+import requests
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Import our ML modules (add repo root to path)
+import sys
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from src.config import Config
+from src.data.etl import DataPipeline
+from src.data.dataset_registry import DatasetRegistry
+from src.models.factory import ModelFactory
+from src.models.arch_nas import NeuralArchitectureSearch
+from src.training.trainer import Trainer
+from src.inference.predictor import Predictor
+from src.utils.visualization import create_confusion_matrix, plot_training_history
 
 # Configure Streamlit page
 st.set_page_config(
     page_title="🌱 CAPSTONE-LAZARUS: Plant Disease AI Detector",
     page_icon="🌱",
     layout="wide",
-    initial_sidebar_state="expanded"
-)
+    initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://github.com/your-repo/capstone-lazarus',
         'Report a bug': "https://github.com/your-repo/capstone-lazarus/issues",
@@ -560,7 +576,6 @@ class StreamlitApp:
                     self.config.model.architecture = selected_model
                     self.config.model.input_shape = (input_size, input_size, 3)
                     self.config.model.num_classes = num_classes
-                    self.config.model.use_pretrained = use_pretrained
                     self.config.model.dropout_rate = dropout_rate
                     
                     # Build model
