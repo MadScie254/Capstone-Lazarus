@@ -58,7 +58,7 @@ class PlantDiseaseInference:
         print(f"   🏷️  Classes: {self.num_classes}")
         print(f"   🖼️ Input size: {self.img_size}")
     
-    def _load_model(self) -> keras.Model:
+    def _load_model(self) -> tf.keras.Model:
         """Load trained model with custom objects."""
         try:
             # Define custom objects for model loading
@@ -66,7 +66,7 @@ class PlantDiseaseInference:
                 'F1Score': self._get_f1_metric()
             }
             
-            model = keras.models.load_model(str(self.model_path), custom_objects=custom_objects)
+            model = tf.keras.models.load_model(str(self.model_path), custom_objects=custom_objects)
             print(f"✅ Model loaded successfully: {model.name}")
             return model
             
@@ -344,7 +344,7 @@ class PlantDiseaseInference:
         uncertainty = np.std(predictions, axis=0).max()
         
         # Get prediction results
-        predicted_class_idx = np.argmax(mean_pred[0])
+        predicted_class_idx = int(np.argmax(mean_pred[0]))
         confidence = float(mean_pred[0][predicted_class_idx])
         predicted_class_name = self.class_names[predicted_class_idx]
         
@@ -390,7 +390,7 @@ class PlantDiseaseInference:
                 return None
             
             # Create gradient model
-            grad_model = keras.Model(
+            grad_model = tf.keras.Model(
                 inputs=self.model.input,
                 outputs=[last_conv_layer.output, self.model.output]
             )
@@ -401,6 +401,10 @@ class PlantDiseaseInference:
                 class_output = predictions[:, predicted_class]
             
             grads = tape.gradient(class_output, conv_outputs)
+            if grads is None:
+                print("⚠️ Could not compute gradients for Grad-CAM")
+                return np.zeros(self.img_size + (1,))
+            
             pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
             
             # Weight feature maps by gradients
@@ -413,13 +417,14 @@ class PlantDiseaseInference:
             
             # Resize to match input image size
             heatmap = tf.image.resize(heatmap[..., tf.newaxis], self.img_size)
-            heatmap = heatmap.numpy()
+            if heatmap is not None:
+                heatmap = heatmap.numpy()
             
-            return heatmap
+            return heatmap if heatmap is not None else np.zeros(self.img_size + (1,))
             
         except Exception as e:
             print(f"⚠️ Error generating Grad-CAM: {e}")
-            return None
+            return np.zeros(self.img_size + (1,))
     
     def _get_recommendations(self, class_name: str, confidence: float) -> Tuple[List[str], str]:
         """Get agricultural recommendations based on prediction."""
@@ -609,7 +614,7 @@ class PlantDiseaseInference:
             },
             "recommendations": {
                 "immediate_actions": result.recommendations[:3] if result.recommendations else [],
-                "monitoring_advice": result.recommendations[3:] if len(result.recommendations) > 3 else [],
+                "monitoring_advice": result.recommendations[3:] if result.recommendations and len(result.recommendations) > 3 else [],
                 "follow_up": ["Recheck plant condition in 3-5 days", 
                              "Document treatment effectiveness"]
             },
