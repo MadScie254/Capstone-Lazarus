@@ -6,7 +6,6 @@ Advanced inference pipeline with uncertainty estimation and explainable AI.
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
