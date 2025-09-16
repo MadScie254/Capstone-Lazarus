@@ -20,14 +20,20 @@ import json
 
 # Add src to path for imports
 src_path = Path(__file__).parent.parent.parent / 'src'
-sys.path.append(str(src_path))
+sys.path.insert(0, str(src_path))
 
 try:
+    # Import directly from the inference.py file
+    import inference
     from inference import PlantDiseaseInference, process_directory
     from data_utils import PlantDiseaseDataLoader
+    INFERENCE_AVAILABLE = True
 except ImportError as e:
     st.error(f"Import error: {e}")
-    st.stop()
+    INFERENCE_AVAILABLE = False
+    PlantDiseaseInference = None
+    process_directory = None
+    PlantDiseaseDataLoader = None
 
 # Page configuration
 st.set_page_config(
