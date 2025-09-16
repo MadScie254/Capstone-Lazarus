@@ -631,7 +631,7 @@ class PlantDiseaseInference:
 # Utility functions for batch processing
 def process_directory(inference_engine: PlantDiseaseInference, 
                      image_directory: str, 
-                     output_path: str = None) -> pd.DataFrame:
+                     output_path: Optional[str] = None) -> pd.DataFrame:
     """Process all images in a directory and create results DataFrame."""
     
     image_dir = Path(image_directory)

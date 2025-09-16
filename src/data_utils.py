@@ -94,6 +94,12 @@ class PlantDiseaseDataLoader:
         
         return stats
     
+    def get_class_names(self) -> List[str]:
+        """Get list of class names."""
+        if not self.class_names:
+            self.scan_dataset()
+        return self.class_names
+    
     def create_balanced_splits(self, test_size: float = 0.2, val_size: float = 0.2, 
                              random_state: int = 42) -> Tuple[Tuple[List, List], Tuple[List, List], Tuple[List, List]]:
         """Create stratified train/val/test splits maintaining class balance."""
