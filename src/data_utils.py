@@ -8,8 +8,7 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import img_to_array
 import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -96,7 +95,7 @@ class PlantDiseaseDataLoader:
         return stats
     
     def create_balanced_splits(self, test_size: float = 0.2, val_size: float = 0.2, 
-                             random_state: int = 42) -> Tuple[List, List, List]:
+                             random_state: int = 42) -> Tuple[Tuple[List, List], Tuple[List, List], Tuple[List, List]]:
         """Create stratified train/val/test splits maintaining class balance."""
         print("📊 Creating balanced dataset splits...")
         
@@ -141,13 +140,16 @@ class PlantDiseaseDataLoader:
         )
         return dict(zip(np.unique(y_train), class_weights))
     
-    def get_augmentation_pipeline(self, is_training: bool = True) -> A.Compose:
-        """Advanced augmentation pipeline using Albumentations."""
+    def get_augmentation_pipeline(self, is_training: bool = True):
+        """Advanced augmentation pipeline using Albumentations or TensorFlow."""
+        if not ALBUMENTATIONS_AVAILABLE:
+            return None  # Will use TensorFlow augmentation in create_tf_dataset
+            
         if is_training:
             return A.Compose([
                 # Geometric transformations
                 A.RandomRotate90(p=0.3),
-                A.Flip(p=0.3),
+                A.HorizontalFlip(p=0.3),  # Fixed from A.Flip
                 A.Rotate(limit=15, p=0.3),
                 A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.3),
                 
@@ -168,12 +170,12 @@ class PlantDiseaseDataLoader:
                 
                 # Final resize and normalize
                 A.Resize(self.img_size[0], self.img_size[1]),
-                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))  # Fixed to tuples
             ])
         else:
             return A.Compose([
                 A.Resize(self.img_size[0], self.img_size[1]),
-                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))  # Fixed to tuples
             ])
     
     def create_tf_dataset(self, paths: List[str], labels: List[int], 
@@ -192,8 +194,8 @@ class PlantDiseaseDataLoader:
             # Normalize to [0, 1]
             image = image / 255.0
             
-            # Additional augmentation for training
-            if is_training:
+            # Additional augmentation for training (only if albumentations not available)
+            if is_training and not ALBUMENTATIONS_AVAILABLE:
                 # Random flip
                 image = tf.image.random_flip_left_right(image)
                 image = tf.image.random_flip_up_down(image)
@@ -207,7 +209,9 @@ class PlantDiseaseDataLoader:
                 image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
             
             # Final normalization (ImageNet stats)
-            image = (image - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
+            mean = tf.constant([0.485, 0.456, 0.406])
+            std = tf.constant([0.229, 0.224, 0.225])
+            image = (image - mean) / std
             
             return image, label
         
@@ -306,11 +310,11 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             
             # Brightness (mean pixel value)
-            brightness = np.mean(gray)
+            brightness = float(np.mean(gray))
             quality_metrics['brightness'].append(brightness)
             
             # Contrast (standard deviation)
-            contrast = np.std(gray)
+            contrast = float(np.std(gray))
             quality_metrics['contrast'].append(contrast)
             
             # Sharpness (Laplacian variance)

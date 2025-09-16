@@ -5,8 +5,8 @@ Advanced model architectures for plant disease classification with transfer lear
 """
 
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, Model, applications
+from tensorflow.keras import layers, Model
+from tensorflow.keras import applications
 from tensorflow.keras.applications import (
     EfficientNetV2B0, EfficientNetV2B1, EfficientNetV2B2,
     ResNet50, ResNet101, ResNet152,
@@ -28,7 +28,7 @@ class ModelFactory:
         self.use_mixed_precision = use_mixed_precision
         
         if use_mixed_precision:
-            keras.mixed_precision.set_global_policy('mixed_float16')
+            tf.keras.mixed_precision.set_global_policy('mixed_float16')
     
     def create_efficientnet_v2(self, variant: str = 'B0', dropout_rate: float = 0.3,
                               freeze_backbone: bool = False) -> Model:
@@ -59,7 +59,7 @@ class ModelFactory:
                 layer.trainable = False
         
         # Build model
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         x = backbone(inputs, training=True)
         
         # Advanced head
@@ -114,7 +114,7 @@ class ModelFactory:
                 layer.trainable = False
         
         # Build model
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         x = backbone(inputs, training=True)
         
         # Advanced head with attention
@@ -168,7 +168,7 @@ class ModelFactory:
                 layer.trainable = False
         
         # Build model
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         x = backbone(inputs, training=True)
         
         # Lightweight head for mobile efficiency
@@ -218,7 +218,7 @@ class ModelFactory:
                 layer.trainable = False
         
         # Build model
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         x = backbone(inputs, training=True)
         
         # Advanced head
@@ -248,7 +248,7 @@ class ModelFactory:
     def create_custom_cnn(self, dropout_rate: float = 0.3) -> Model:
         """Create custom CNN optimized for plant disease patterns."""
         
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         
         # Feature extraction with progressive complexity
         x = layers.Conv2D(32, 3, activation='relu', padding='same')(inputs)
@@ -305,7 +305,7 @@ class ModelFactory:
         num_patches = (self.input_shape[0] // patch_size) ** 2
         projection_dim = 64
         
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         
         # Create patches
         patches = layers.Conv2D(projection_dim, patch_size, strides=patch_size)(inputs)
@@ -353,7 +353,7 @@ class ModelFactory:
     def create_hybrid_model(self, dropout_rate: float = 0.3) -> Model:
         """Create hybrid CNN-Transformer model for plant disease classification."""
         
-        inputs = keras.Input(shape=self.input_shape)
+        inputs = tf.keras.Input(shape=self.input_shape)
         
         # CNN feature extraction
         x = layers.Conv2D(64, 3, activation='relu', padding='same')(inputs)
@@ -367,9 +367,9 @@ class ModelFactory:
         x = layers.Conv2D(256, 3, activation='relu', padding='same')(x)
         x = layers.BatchNormalization()(x)
         
-        # Reshape for transformer
-        shape = tf.shape(x)
-        x = layers.Reshape((shape[1] * shape[2], shape[3]))(x)
+        # Reshape for transformer - get static shape for reshape
+        _, h, w, c = x.shape
+        x = layers.Reshape((h * w, c))(x)
         
         # Simple transformer block
         x1 = layers.LayerNormalization()(x)
