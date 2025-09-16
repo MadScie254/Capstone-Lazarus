@@ -1,0 +1,356 @@
+"""
+CAPSTONE-LAZARUS: Data Utilities
+===============================
+Comprehensive data loading, preprocessing, and augmentation utilities for plant disease detection.
+"""
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import cv2
+from PIL import Image
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+from typing import Tuple, List, Dict, Any, Optional
+try:
+    import albumentations as A
+    ALBUMENTATIONS_AVAILABLE = True
+except ImportError:
+    print("⚠️ Albumentations not available. Using basic augmentations only.")
+    A = None
+    ALBUMENTATIONS_AVAILABLE = False
+from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
+import plotly.express as px
+import plotly.graph_objects as go
+from collections import Counter
+
+class PlantDiseaseDataLoader:
+    """Advanced data loader for plant disease images with comprehensive preprocessing."""
+    
+    def __init__(self, data_dir: str, img_size: Tuple[int, int] = (224, 224), batch_size: int = 32):
+        self.data_dir = Path(data_dir)
+        self.img_size = img_size
+        self.batch_size = batch_size
+        self.class_names = []
+        self.class_counts = {}
+        
+    def scan_dataset(self) -> Dict[str, Any]:
+        """Scan dataset and return comprehensive statistics."""
+        print("🔍 Scanning dataset...")
+        
+        stats = {
+            'total_images': 0,
+            'num_classes': 0,
+            'class_distribution': {},
+            'class_names': [],
+            'imbalance_ratio': 0.0,
+            'crop_types': {'corn': 0, 'potato': 0, 'tomato': 0, 'healthy': 0, 'diseased': 0}
+        }
+        
+        # Scan all subdirectories
+        for class_dir in self.data_dir.iterdir():
+            if class_dir.is_dir():
+                class_name = class_dir.name
+                image_files = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+                count = len(image_files)
+                
+                if count > 0:
+                    stats['class_distribution'][class_name] = count
+                    stats['class_names'].append(class_name)
+                    stats['total_images'] += count
+                    
+                    # Categorize by crop type
+                    if 'corn' in class_name.lower() or 'maize' in class_name.lower():
+                        stats['crop_types']['corn'] += count
+                    elif 'potato' in class_name.lower():
+                        stats['crop_types']['potato'] += count
+                    elif 'tomato' in class_name.lower():
+                        stats['crop_types']['tomato'] += count
+                    
+                    # Categorize by health status
+                    if 'healthy' in class_name.lower():
+                        stats['crop_types']['healthy'] += count
+                    else:
+                        stats['crop_types']['diseased'] += count
+        
+        stats['num_classes'] = len(stats['class_names'])
+        
+        # Calculate imbalance ratio
+        if stats['class_distribution']:
+            counts = list(stats['class_distribution'].values())
+            stats['imbalance_ratio'] = max(counts) / min(counts)
+        
+        self.class_names = stats['class_names']
+        self.class_counts = stats['class_distribution']
+        
+        print(f"✅ Dataset scan complete:")
+        print(f"   📊 Total Images: {stats['total_images']:,}")
+        print(f"   🏷️  Classes: {stats['num_classes']}")
+        print(f"   ⚖️  Imbalance Ratio: {stats['imbalance_ratio']:.2f}")
+        
+        return stats
+    
+    def create_balanced_splits(self, test_size: float = 0.2, val_size: float = 0.2, 
+                             random_state: int = 42) -> Tuple[List, List, List]:
+        """Create stratified train/val/test splits maintaining class balance."""
+        print("📊 Creating balanced dataset splits...")
+        
+        all_paths = []
+        all_labels = []
+        
+        # Collect all image paths and labels
+        for idx, class_name in enumerate(self.class_names):
+            class_dir = self.data_dir / class_name
+            image_files = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+            
+            for img_path in image_files:
+                all_paths.append(str(img_path))
+                all_labels.append(idx)
+        
+        # Create stratified splits
+        X_temp, X_test, y_temp, y_test = train_test_split(
+            all_paths, all_labels, test_size=test_size, 
+            stratify=all_labels, random_state=random_state
+        )
+        
+        # Split remaining into train and validation
+        val_size_adjusted = val_size / (1 - test_size)
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_temp, y_temp, test_size=val_size_adjusted,
+            stratify=y_temp, random_state=random_state
+        )
+        
+        print(f"✅ Dataset splits created:")
+        print(f"   🚂 Train: {len(X_train):,} images")
+        print(f"   🔍 Validation: {len(X_val):,} images")  
+        print(f"   🧪 Test: {len(X_test):,} images")
+        
+        return (X_train, y_train), (X_val, y_val), (X_test, y_test)
+    
+    def compute_class_weights(self, y_train: List[int]) -> Dict[int, float]:
+        """Compute class weights for handling imbalanced dataset."""
+        class_weights = compute_class_weight(
+            'balanced', 
+            classes=np.unique(y_train), 
+            y=y_train
+        )
+        return dict(zip(np.unique(y_train), class_weights))
+    
+    def get_augmentation_pipeline(self, is_training: bool = True) -> A.Compose:
+        """Advanced augmentation pipeline using Albumentations."""
+        if is_training:
+            return A.Compose([
+                # Geometric transformations
+                A.RandomRotate90(p=0.3),
+                A.Flip(p=0.3),
+                A.Rotate(limit=15, p=0.3),
+                A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.3),
+                
+                # Color & lighting (simulate field conditions)
+                A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.4),
+                A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=20, p=0.3),
+                A.RandomGamma(gamma_limit=(80, 120), p=0.2),
+                A.CLAHE(clip_limit=2.0, tile_grid_size=(4, 4), p=0.2),
+                
+                # Noise & blur (simulate camera/environmental conditions)
+                A.GaussNoise(var_limit=(10, 50), p=0.2),
+                A.GaussianBlur(blur_limit=3, p=0.1),
+                A.MotionBlur(blur_limit=3, p=0.1),
+                
+                # Occlusion simulation
+                A.CoarseDropout(max_holes=8, max_height=32, max_width=32, 
+                              min_holes=1, min_height=8, min_width=8, p=0.2),
+                
+                # Final resize and normalize
+                A.Resize(self.img_size[0], self.img_size[1]),
+                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+        else:
+            return A.Compose([
+                A.Resize(self.img_size[0], self.img_size[1]),
+                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+    
+    def create_tf_dataset(self, paths: List[str], labels: List[int], 
+                         is_training: bool = True, shuffle: bool = True) -> tf.data.Dataset:
+        """Create optimized TensorFlow dataset with augmentation."""
+        
+        def load_and_preprocess(path, label):
+            # Load image
+            image = tf.io.read_file(path)
+            image = tf.image.decode_image(image, channels=3, expand_animations=False)
+            image = tf.cast(image, tf.float32)
+            
+            # Resize
+            image = tf.image.resize(image, self.img_size)
+            
+            # Normalize to [0, 1]
+            image = image / 255.0
+            
+            # Additional augmentation for training
+            if is_training:
+                # Random flip
+                image = tf.image.random_flip_left_right(image)
+                image = tf.image.random_flip_up_down(image)
+                
+                # Random brightness and contrast
+                image = tf.image.random_brightness(image, max_delta=0.2)
+                image = tf.image.random_contrast(image, lower=0.8, upper=1.2)
+                
+                # Random hue and saturation
+                image = tf.image.random_hue(image, max_delta=0.1)
+                image = tf.image.random_saturation(image, lower=0.8, upper=1.2)
+            
+            # Final normalization (ImageNet stats)
+            image = (image - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
+            
+            return image, label
+        
+        # Create dataset
+        dataset = tf.data.Dataset.from_tensor_slices((paths, labels))
+        
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=min(len(paths), 10000))
+        
+        dataset = dataset.map(load_and_preprocess, num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.batch(self.batch_size)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        
+        return dataset
+
+def visualize_class_distribution(class_counts: Dict[str, int], save_path: Optional[str] = None) -> go.Figure:
+    """Create interactive Plotly visualization of class distribution."""
+    
+    # Sort by count for better visualization
+    sorted_classes = dict(sorted(class_counts.items(), key=lambda x: x[1], reverse=True))
+    
+    # Create color palette
+    colors = px.colors.qualitative.Set3
+    
+    # Create bar chart
+    fig = go.Figure(data=[
+        go.Bar(
+            x=list(sorted_classes.keys()),
+            y=list(sorted_classes.values()),
+            marker_color=colors[:len(sorted_classes)],
+            text=list(sorted_classes.values()),
+            textposition='auto',
+        )
+    ])
+    
+    fig.update_layout(
+        title="🌱 Plant Disease Class Distribution",
+        xaxis_title="Disease Classes",
+        yaxis_title="Number of Images",
+        template="plotly_white",
+        height=600,
+        xaxis_tickangle=45
+    )
+    
+    if save_path:
+        fig.write_html(save_path)
+    
+    return fig
+
+def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, Any]:
+    """Analyze image quality metrics across dataset."""
+    print(f"🔍 Analyzing image quality (sampling {sample_size} images)...")
+    
+    quality_metrics = {
+        'resolutions': [],
+        'file_sizes': [],
+        'aspect_ratios': [],
+        'brightness': [],
+        'contrast': [],
+        'sharpness': []
+    }
+    
+    data_path = Path(data_dir)
+    all_images = []
+    
+    # Collect all image paths
+    for class_dir in data_path.iterdir():
+        if class_dir.is_dir():
+            images = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+            all_images.extend(images)
+    
+    # Sample images for analysis
+    if len(all_images) > sample_size:
+        sample_images = np.random.choice(all_images, sample_size, replace=False)
+    else:
+        sample_images = all_images
+    
+    for img_path in sample_images:
+        try:
+            # Load image
+            img = cv2.imread(str(img_path))
+            if img is None:
+                continue
+                
+            h, w, c = img.shape
+            
+            # Resolution and aspect ratio
+            quality_metrics['resolutions'].append(f"{w}x{h}")
+            quality_metrics['aspect_ratios'].append(w/h)
+            
+            # File size
+            file_size = os.path.getsize(img_path) / 1024  # KB
+            quality_metrics['file_sizes'].append(file_size)
+            
+            # Convert to grayscale for quality metrics
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Brightness (mean pixel value)
+            brightness = np.mean(gray)
+            quality_metrics['brightness'].append(brightness)
+            
+            # Contrast (standard deviation)
+            contrast = np.std(gray)
+            quality_metrics['contrast'].append(contrast)
+            
+            # Sharpness (Laplacian variance)
+            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+            sharpness = laplacian.var()
+            quality_metrics['sharpness'].append(sharpness)
+            
+        except Exception as e:
+            print(f"⚠️  Error processing {img_path}: {e}")
+            continue
+    
+    # Calculate statistics
+    stats = {}
+    for metric, values in quality_metrics.items():
+        if values and metric != 'resolutions':
+            stats[metric] = {
+                'mean': np.mean(values),
+                'std': np.std(values),
+                'min': np.min(values),
+                'max': np.max(values),
+                'median': np.median(values)
+            }
+    
+    # Resolution distribution
+    resolution_counts = Counter(quality_metrics['resolutions'])
+    stats['top_resolutions'] = dict(resolution_counts.most_common(5))
+    
+    print("✅ Image quality analysis complete!")
+    
+    return stats
+
+if __name__ == "__main__":
+    # Example usage
+    loader = PlantDiseaseDataLoader("data", img_size=(224, 224), batch_size=32)
+    stats = loader.scan_dataset()
+    
+    # Create splits
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = loader.create_balanced_splits()
+    
+    # Compute class weights
+    class_weights = loader.compute_class_weights(y_train)
+    
+    print(f"Class weights: {class_weights}")

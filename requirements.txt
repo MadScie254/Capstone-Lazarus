@@ -1,0 +1,44 @@
+# Core ML/DL Dependencies
+tensorflow>=2.12.0,<2.21.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+pillow>=9.5.0
+opencv-python>=4.8.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Interactive Visualization (Tableau-level)
+plotly>=5.15.0
+plotly-dash>=2.10.0
+altair>=5.0.0
+bokeh>=3.2.0
+
+# Web Dashboard
+streamlit>=1.28.0
+streamlit-plotly-events>=0.0.6
+streamlit-aggrid>=0.3.4
+
+# Model Interpretation & Explainability
+grad-cam>=1.4.8
+lime>=0.2.0
+shap>=0.42.0
+
+# Image Processing & Augmentation
+albumentations>=1.3.0
+imgaug>=0.4.0
+
+# Utilities
+tqdm>=4.66.0
+psutil>=5.9.0
+python-dotenv>=1.0.0
+pathlib2>=2.3.0
+
+# Jupyter & Development
+jupyter>=1.0.0
+ipykernel>=6.25.0
+ipywidgets>=8.1.0
+notebook>=7.0.0
+
+# Optional GPU Support
+# tensorflow-gpu>=2.12.0  # Uncomment if using GPU
