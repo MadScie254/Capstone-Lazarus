@@ -5,6 +5,7 @@ Comprehensive data loading, preprocessing, and augmentation utilities for plant 
 """
 
 import os
+import logging
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -28,6 +29,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 class PlantDiseaseDataLoader:
     """Advanced data loader for plant disease images with comprehensive preprocessing."""
     
@@ -38,59 +43,122 @@ class PlantDiseaseDataLoader:
         self.class_names = []
         self.class_counts = {}
         
+        # Defensive checks
+        if not self.data_dir.exists():
+            raise FileNotFoundError(f"Data directory does not exist: {self.data_dir}")
+        
+        if not self.data_dir.is_dir():
+            raise NotADirectoryError(f"Path is not a directory: {self.data_dir}")
+        
+        logger.info(f"Initialized PlantDiseaseDataLoader with data_dir: {self.data_dir}")
+        
     def scan_dataset(self) -> Dict[str, Any]:
-        """Scan dataset and return comprehensive statistics."""
-        print("🔍 Scanning dataset...")
+        """Scan dataset and return comprehensive statistics with robust error handling."""
+        logger.info("🔍 Scanning dataset...")
         
         stats = {
             'total_images': 0,
+            'valid_images': 0,
+            'corrupted_images': 0,
             'num_classes': 0,
             'class_distribution': {},
             'class_names': [],
             'imbalance_ratio': 0.0,
-            'crop_types': {'corn': 0, 'potato': 0, 'tomato': 0, 'healthy': 0, 'diseased': 0}
+            'crop_types': {'corn': 0, 'potato': 0, 'tomato': 0, 'healthy': 0, 'diseased': 0},
+            'image_extensions': Counter(),
+            'mean_image_shape': None
         }
+        
+        # Track image shapes for mean calculation
+        image_shapes = []
         
         # Scan all subdirectories
         for class_dir in self.data_dir.iterdir():
-            if class_dir.is_dir():
-                class_name = class_dir.name
-                image_files = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
-                count = len(image_files)
+            if not class_dir.is_dir():
+                continue
                 
-                if count > 0:
-                    stats['class_distribution'][class_name] = count
-                    stats['class_names'].append(class_name)
-                    stats['total_images'] += count
-                    
-                    # Categorize by crop type
-                    if 'corn' in class_name.lower() or 'maize' in class_name.lower():
-                        stats['crop_types']['corn'] += count
-                    elif 'potato' in class_name.lower():
-                        stats['crop_types']['potato'] += count
-                    elif 'tomato' in class_name.lower():
-                        stats['crop_types']['tomato'] += count
-                    
-                    # Categorize by health status
-                    if 'healthy' in class_name.lower():
-                        stats['crop_types']['healthy'] += count
-                    else:
-                        stats['crop_types']['diseased'] += count
+            class_name = class_dir.name
+            logger.info(f"Processing class: {class_name}")
+            
+            # Find all image files with supported extensions
+            image_extensions = ['*.jpg', '*.JPG', '*.jpeg', '*.JPEG', '*.png', '*.PNG', '*.bmp', '*.BMP']
+            image_files = []
+            for ext in image_extensions:
+                image_files.extend(list(class_dir.glob(ext)))
+            
+            valid_count = 0
+            corrupted_count = 0
+            
+            for img_path in image_files:
+                stats['total_images'] += 1
+                stats['image_extensions'][img_path.suffix.lower()] += 1
+                
+                # Check if image can be loaded (basic corruption check)
+                try:
+                    with Image.open(img_path) as img:
+                        # Verify image can be loaded and get shape
+                        img.verify()  # Verify image integrity
+                        
+                    # Reopen to get size (verify() closes the image)
+                    with Image.open(img_path) as img:
+                        width, height = img.size
+                        image_shapes.append((height, width))
+                        valid_count += 1
+                        stats['valid_images'] += 1
+                        
+                except (IOError, OSError, Image.UnidentifiedImageError) as e:
+                    logger.warning(f"Corrupted image found: {img_path} - {e}")
+                    corrupted_count += 1
+                    stats['corrupted_images'] += 1
+                    continue
+            
+            if valid_count > 0:
+                stats['class_distribution'][class_name] = valid_count
+                stats['class_names'].append(class_name)
+                
+                # Categorize by crop type
+                class_lower = class_name.lower()
+                if 'corn' in class_lower or 'maize' in class_lower:
+                    stats['crop_types']['corn'] += valid_count
+                elif 'potato' in class_lower:
+                    stats['crop_types']['potato'] += valid_count
+                elif 'tomato' in class_lower:
+                    stats['crop_types']['tomato'] += valid_count
+                
+                # Categorize by health status
+                if 'healthy' in class_lower:
+                    stats['crop_types']['healthy'] += valid_count
+                else:
+                    stats['crop_types']['diseased'] += valid_count
+            
+            if corrupted_count > 0:
+                logger.warning(f"Found {corrupted_count} corrupted images in {class_name}")
         
         stats['num_classes'] = len(stats['class_names'])
+        
+        # Calculate mean image shape
+        if image_shapes:
+            mean_height = int(np.mean([shape[0] for shape in image_shapes]))
+            mean_width = int(np.mean([shape[1] for shape in image_shapes]))
+            stats['mean_image_shape'] = (mean_height, mean_width)
         
         # Calculate imbalance ratio
         if stats['class_distribution']:
             counts = list(stats['class_distribution'].values())
-            stats['imbalance_ratio'] = max(counts) / min(counts)
+            stats['imbalance_ratio'] = max(counts) / min(counts) if min(counts) > 0 else float('inf')
         
+        # Store class information
         self.class_names = stats['class_names']
         self.class_counts = stats['class_distribution']
         
-        print(f"✅ Dataset scan complete:")
-        print(f"   📊 Total Images: {stats['total_images']:,}")
-        print(f"   🏷️  Classes: {stats['num_classes']}")
-        print(f"   ⚖️  Imbalance Ratio: {stats['imbalance_ratio']:.2f}")
+        logger.info("✅ Dataset scan complete:")
+        logger.info(f"   📊 Total Images Found: {stats['total_images']:,}")
+        logger.info(f"   ✅ Valid Images: {stats['valid_images']:,}")
+        logger.info(f"   ❌ Corrupted Images: {stats['corrupted_images']:,}")
+        logger.info(f"   🏷️  Classes: {stats['num_classes']}")
+        logger.info(f"   ⚖️  Imbalance Ratio: {stats['imbalance_ratio']:.2f}")
+        if stats['mean_image_shape']:
+            logger.info(f"   📐 Mean Image Shape: {stats['mean_image_shape']}")
         
         return stats
     
@@ -353,8 +421,28 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     return stats
 
     def get_dataset_stats(self) -> Dict[str, Any]:
-        """Get comprehensive dataset statistics (alias for scan_dataset for compatibility)."""
-        return self.scan_dataset()
+        """Get comprehensive dataset statistics with enhanced robustness.
+        
+        Returns dictionary with keys: total_images, valid_images, corrupted_images,
+        num_classes, class_distribution, class_names, imbalance_ratio, crop_types, etc.
+        """
+        stats = self.scan_dataset()
+        
+        # Create a pandas DataFrame for additional analysis
+        if stats['class_distribution']:
+            df_data = []
+            for class_name, count in stats['class_distribution'].items():
+                df_data.append({
+                    'class_name': class_name,
+                    'count': count,
+                    'percentage': (count / stats['valid_images']) * 100,
+                    'plant_type': self._get_plant_type(class_name),
+                    'health_status': 'healthy' if 'healthy' in class_name.lower() else 'diseased'
+                })
+            
+            stats['dataframe'] = pd.DataFrame(df_data)
+        
+        return stats
     
     def analyze_class_distribution(self) -> Dict[str, int]:
         """Analyze class distribution and return counts."""
