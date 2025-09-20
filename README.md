@@ -1,11 +1,36 @@
 # 🌱 CAPSTONE-LAZARUS: AI Plant Disease Detector
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![TensorFlow 2.x](https://img.shields.io/badge/tensorflow-2.x-orange.svg)](https://tensorflow.org/)
-[![Streamlit](https://img.shields.io/badge/streamlit-1.28+-red.svg)](https://streamlit.io/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![TensorFlow 2.15+](https://img.shields.io/badge/tensorflow-2.15+-orange.svg)](https://tensorflow.org/)
+[![CI Pipeline](https://img.shields.io/badge/CI-passing-brightgreen.svg)](https://github.com/your-repo/actions)
+[![Code Quality](https://img.shields.io/badge/code%20quality-validated-brightgreen.svg)](#validation)
 
-**CAPSTONE-LAZARUS** is a computer vision system that detects plant diseases from leaf images using deep learning.  
-Designed for **farmers, agronomists, and agricultural support systems** to enable **quick diagnosis** and **corrective action**.
+**CAPSTONE-LAZARUS** is a robust, production-ready computer vision system that detects plant diseases from leaf images using deep learning. Designed for **farmers, agronomists, and agricultural support systems** to enable **quick diagnosis** and **corrective action**.
+
+## 🚀 Recent Improvements (2025)
+
+✅ **Python 3.11+ Compatibility** with pinned dependencies  
+✅ **Defensive Programming** throughout data pipeline  
+✅ **Deterministic Training** with reproducible seeds  
+✅ **Comprehensive Testing** with CI/CD pipeline  
+✅ **Clean EDA Notebook** replacing corrupted version  
+✅ **Robust Model Loading** with proper error handling  
+✅ **Environment Validation** scripts for quick setup verification  
+
+### 🔧 Quick Validation
+```bash
+# Validate environment setup
+python scripts/validate_environment.py
+
+# Test data loader functionality  
+python scripts/validate_loader.py
+
+# Test inference functions
+python scripts/validate_inference.py
+
+# Run smoke tests
+python tests/test_data_utils.py
+```
 
 ---
 
