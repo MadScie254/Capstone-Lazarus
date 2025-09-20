@@ -106,6 +106,10 @@ class PlantDiseaseDataLoader:
         """Create stratified train/val/test splits maintaining class balance."""
         print("📊 Creating balanced dataset splits...")
         
+        # Ensure class names are populated
+        if not self.class_names:
+            self.get_dataset_stats()
+        
         all_paths = []
         all_labels = []
         
@@ -233,41 +237,6 @@ class PlantDiseaseDataLoader:
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
         
         return dataset
-
-def visualize_class_distribution(class_counts: Dict[str, int], save_path: Optional[str] = None) -> go.Figure:
-    """Create interactive Plotly visualization of class distribution."""
-    
-    # Sort by count for better visualization
-    sorted_classes = dict(sorted(class_counts.items(), key=lambda x: x[1], reverse=True))
-    
-    # Create color palette
-    colors = px.colors.qualitative.Set3
-    
-    # Create bar chart
-    fig = go.Figure(data=[
-        go.Bar(
-            x=list(sorted_classes.keys()),
-            y=list(sorted_classes.values()),
-            marker_color=colors[:len(sorted_classes)],
-            text=list(sorted_classes.values()),
-            textposition='auto',
-        )
-    ])
-    
-    fig.update_layout(
-        title="🌱 Plant Disease Class Distribution",
-        xaxis_title="Disease Classes",
-        yaxis_title="Number of Images",
-        template="plotly_white",
-        height=600,
-        xaxis_tickangle=45
-    )
-    
-    if save_path:
-        fig.write_html(save_path)
-    
-    return fig
-
 def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, Any]:
     """Analyze image quality metrics across dataset."""
     print(f"🔍 Analyzing image quality (sampling {sample_size} images)...")
@@ -292,7 +261,7 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     
     # Sample images for analysis
     if len(all_images) > sample_size:
-        sample_images = np.random.choice(all_images, sample_size, replace=False)
+        sample_images = random.sample(all_images, sample_size)
     else:
         sample_images = all_images
     
