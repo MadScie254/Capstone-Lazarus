@@ -237,91 +237,7 @@ class PlantDiseaseDataLoader:
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
         
         return dataset
-def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, Any]:
-    """Analyze image quality metrics across dataset."""
-    print(f"🔍 Analyzing image quality (sampling {sample_size} images)...")
     
-    quality_metrics = {
-        'resolutions': [],
-        'file_sizes': [],
-        'aspect_ratios': [],
-        'brightness': [],
-        'contrast': [],
-        'sharpness': []
-    }
-    
-    data_path = Path(data_dir)
-    all_images = []
-    
-    # Collect all image paths
-    for class_dir in data_path.iterdir():
-        if class_dir.is_dir():
-            images = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
-            all_images.extend(images)
-    
-    # Sample images for analysis
-    if len(all_images) > sample_size:
-        sample_images = random.sample(all_images, sample_size)
-    else:
-        sample_images = all_images
-    
-    for img_path in sample_images:
-        try:
-            # Load image
-            img = cv2.imread(str(img_path))
-            if img is None:
-                continue
-                
-            h, w, c = img.shape
-            
-            # Resolution and aspect ratio
-            quality_metrics['resolutions'].append(f"{w}x{h}")
-            quality_metrics['aspect_ratios'].append(w/h)
-            
-            # File size
-            file_size = os.path.getsize(img_path) / 1024  # KB
-            quality_metrics['file_sizes'].append(file_size)
-            
-            # Convert to grayscale for quality metrics
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            
-            # Brightness (mean pixel value)
-            brightness = float(np.mean(gray))
-            quality_metrics['brightness'].append(brightness)
-            
-            # Contrast (standard deviation)
-            contrast = float(np.std(gray))
-            quality_metrics['contrast'].append(contrast)
-            
-            # Sharpness (Laplacian variance)
-            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-            sharpness = laplacian.var()
-            quality_metrics['sharpness'].append(sharpness)
-            
-        except Exception as e:
-            print(f"⚠️  Error processing {img_path}: {e}")
-            continue
-    
-    # Calculate statistics
-    stats = {}
-    for metric, values in quality_metrics.items():
-        if values and metric != 'resolutions':
-            stats[metric] = {
-                'mean': np.mean(values),
-                'std': np.std(values),
-                'min': np.min(values),
-                'max': np.max(values),
-                'median': np.median(values)
-            }
-    
-    # Resolution distribution
-    resolution_counts = Counter(quality_metrics['resolutions'])
-    stats['top_resolutions'] = dict(resolution_counts.most_common(5))
-    
-    print("✅ Image quality analysis complete!")
-    
-    return stats
-
     def get_dataset_stats(self, compute_image_shape: bool = False, sample_max: int = 500) -> Dict[str, Any]:
         """Get comprehensive dataset statistics with defensive programming.
         
@@ -429,7 +345,95 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
         print(f"   ⚖️  Imbalance Ratio: {stats['imbalance_ratio']:.2f}")
         
         return stats
+
+
+def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, Any]:
+    """Analyze image quality metrics across dataset."""
+    print(f"🔍 Analyzing image quality (sampling {sample_size} images)...")
     
+    quality_metrics = {
+        'resolutions': [],
+        'file_sizes': [],
+        'aspect_ratios': [],
+        'brightness': [],
+        'contrast': [],
+        'sharpness': []
+    }
+    
+    data_path = Path(data_dir)
+    all_images = []
+    
+    # Collect all image paths
+    for class_dir in data_path.iterdir():
+        if class_dir.is_dir():
+            images = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+            all_images.extend(images)
+    
+    # Sample images for analysis
+    if len(all_images) > sample_size:
+        sample_images = random.sample(all_images, sample_size)
+    else:
+        sample_images = all_images
+    
+    for img_path in sample_images:
+        try:
+            # Load image
+            img = cv2.imread(str(img_path))
+            if img is None:
+                continue
+                
+            h, w, c = img.shape
+            
+            # Resolution and aspect ratio
+            quality_metrics['resolutions'].append(f"{w}x{h}")
+            quality_metrics['aspect_ratios'].append(w/h)
+            
+            # File size
+            file_size = os.path.getsize(img_path) / 1024  # KB
+            quality_metrics['file_sizes'].append(file_size)
+            
+            # Convert to grayscale for quality metrics
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Brightness (mean pixel value)
+            brightness = float(np.mean(gray))
+            quality_metrics['brightness'].append(brightness)
+            
+            # Contrast (standard deviation)
+            contrast = float(np.std(gray))
+            quality_metrics['contrast'].append(contrast)
+            
+            # Sharpness (Laplacian variance)
+            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+            sharpness = laplacian.var()
+            quality_metrics['sharpness'].append(sharpness)
+            
+        except Exception as e:
+            print(f"⚠️  Error processing {img_path}: {e}")
+            continue
+    
+    # Calculate statistics
+    stats = {}
+    for metric, values in quality_metrics.items():
+        if values and metric != 'resolutions':
+            stats[metric] = {
+                'mean': np.mean(values),
+                'std': np.std(values),
+                'min': np.min(values),
+                'max': np.max(values),
+                'median': np.median(values)
+            }
+    
+    # Resolution distribution
+    resolution_counts = Counter(quality_metrics['resolutions'])
+    stats['top_resolutions'] = dict(resolution_counts.most_common(5))
+    
+    print("✅ Image quality analysis complete!")
+    
+    return stats
+
+
+# Additional utility methods that got misplaced - they should be part of the main PlantDiseaseDataLoader class above
     def analyze_class_distribution(self) -> Dict[str, int]:
         """Analyze class distribution and return counts."""
         if not self.class_counts:
