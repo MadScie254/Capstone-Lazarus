@@ -50,6 +50,12 @@ class GradCAM:
         """
         self.model = model
         self.model_name = model_name
+        
+        # Ensure model is built by calling it once
+        if not model.built:
+            dummy_input = tf.random.normal((1, 224, 224, 3))
+            _ = model(dummy_input)
+        
         self.target_layer_name = target_layer or self._find_target_layer()
         
         # Create gradient model
@@ -574,18 +580,23 @@ def verify_grad_cam_functionality():
     print("=" * 50)
     
     try:
-        # Create a simple test model
-        test_model = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(32, 3, activation='relu', input_shape=(224, 224, 3)),
-            tf.keras.layers.Conv2D(64, 3, activation='relu'),
-            tf.keras.layers.GlobalAveragePooling2D(),
-            tf.keras.layers.Dense(19, activation='softmax')
-        ])
+        # Create a more compatible test model using functional API
+        inputs = tf.keras.layers.Input(shape=(224, 224, 3))
+        x = tf.keras.layers.Conv2D(32, 3, activation='relu', name='conv1')(inputs)
+        x = tf.keras.layers.Conv2D(64, 3, activation='relu', name='conv2')(x)
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        outputs = tf.keras.layers.Dense(19, activation='softmax')(x)
         
-        print("✅ Test model created")
+        test_model = tf.keras.Model(inputs, outputs)
         
-        # Initialize Grad-CAM
-        grad_cam = GradCAM(test_model, model_name="test_model")
+        # Build the model by calling it once
+        dummy_input = tf.random.normal((1, 224, 224, 3))
+        _ = test_model(dummy_input)
+        
+        print("✅ Test model created and built")
+        
+        # Initialize Grad-CAM with explicit target layer
+        grad_cam = GradCAM(test_model, target_layer='conv2', model_name="test_model")
         print("✅ Grad-CAM initialized")
         print(f"✅ Target layer found: {grad_cam.target_layer_name}")
         

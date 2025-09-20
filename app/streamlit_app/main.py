@@ -96,8 +96,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-""")
-
 def get_fallback_classes():
     """Get fallback class names when data loading fails."""
     return [
@@ -381,10 +379,12 @@ def main():
                 # Risk level indicator
                 risk_style = get_risk_level_style(result['risk_level'])
                 confidence_class = 'high' if result['confidence'] > 0.8 else 'medium' if result['confidence'] > 0.6 else 'low'
+                risk_emoji = "🚨"
+                plant_emoji = "🌿"
                 st.markdown(f"""
                 <div class="metric-container {risk_style}">
-                    <h3>🚨 Risk Level: {result['risk_level'].upper()}</h3>
-                    <h2>🌿 {result['class_name'].replace('_', ' ').title()}</h2>
+                    <h3>{risk_emoji} Risk Level: {result['risk_level'].upper()}</h3>
+                    <h2>{plant_emoji} {result['class_name'].replace('_', ' ').title()}</h2>
                     <p><strong>Confidence:</strong> 
                     <span class="confidence-{confidence_class}">
                     {result['confidence']:.1%}</span></p>

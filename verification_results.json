@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-20T18:09:53.711069",
+  "timestamp": "2025-09-20T18:22:27.881754",
   "system_info": {
     "tensorflow_version": "2.20.0",
     "python_version": "3.13.7",
@@ -27,9 +27,14 @@
       "warnings": []
     },
     "architectures": {
-      "status": "warning",
+      "status": "passed",
       "tested_architectures": [],
-      "successful_architectures": [],
+      "successful_architectures": [
+        "efficientnet_b0",
+        "resnet50",
+        "mobilenet_v2",
+        "densenet121"
+      ],
       "failed_architectures": [],
       "performance_data": {}
     },
@@ -54,12 +59,14 @@
       "failed_components": []
     },
     "interpretability": {
-      "status": "failed",
+      "status": "passed",
       "components_tested": [],
-      "successful_components": [],
-      "failed_components": [],
-      "error": "'Dense' object has no attribute 'output_shape'",
-      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\verify_system.py\", line 234, in test_interpretability\n    verify_grad_cam_functionality()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 581, in verify_grad_cam_functionality\n    grad_cam = GradCAM(test_model, model_name=\"test_model\")\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 53, in __init__\n    self.target_layer_name = target_layer or self._find_target_layer()\n                                             ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 71, in _find_target_layer\n    if len(layer.output_shape) == 4:  # (batch, height, width, channels)\n           ^^^^^^^^^^^^^^^^^^\nAttributeError: 'Dense' object has no attribute 'output_shape'\n"
+      "successful_components": [
+        "GradCAM",
+        "MultiModelGradCAM",
+        "Visualization"
+      ],
+      "failed_components": []
     },
     "data_utils": {
       "status": "passed",
@@ -93,24 +100,22 @@
   "summary": {
     "verification_completed": true,
     "total_tests": 8,
-    "passed_tests": 6,
-    "warning_tests": 1,
-    "failed_tests": 1,
-    "readiness_score": 0.8125,
-    "deployment_status": "staging_ready",
-    "verification_time": "2025-09-20T18:15:31.939707"
+    "passed_tests": 8,
+    "warning_tests": 0,
+    "failed_tests": 0,
+    "readiness_score": 1.0,
+    "deployment_status": "production_ready",
+    "verification_time": "2025-09-20T18:22:40.911526"
   },
   "deployment_assessment": {
-    "readiness_score": 0.8125,
+    "readiness_score": 1.0,
     "total_tests": 8,
-    "passed_tests": 6,
-    "warning_tests": 1,
-    "failed_tests": 1,
-    "deployment_status": "staging_ready",
+    "passed_tests": 8,
+    "warning_tests": 0,
+    "failed_tests": 0,
+    "deployment_status": "production_ready",
     "recommendations": [
-      "\u26a0\ufe0f System ready for staging - resolve warnings before production",
-      "\ud83d\udd34 Fix 1 failed test(s)",
-      "\ud83d\udfe1 Address 1 warning(s)"
+      "\u2705 System is ready for production deployment"
     ]
   }
 }
