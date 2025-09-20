@@ -17,6 +17,113 @@ import pandas as pd
 from dataclasses import dataclass
 import json
 
+def load_model_keras(name: str = "best_model.h5") -> tf.keras.Model:
+    """
+    Load a Keras model from the models directory with proper error handling.
+    
+    Args:
+        name: Model filename (default: "best_model.h5")
+        
+    Returns:
+        Loaded Keras model
+        
+    Raises:
+        FileNotFoundError: If model file doesn't exist
+        Exception: If model loading fails
+    """
+    models_dir = Path("models")
+    model_path = models_dir / name
+    
+    if not model_path.exists():
+        raise FileNotFoundError(f"Model not found: {model_path}")
+    
+    try:
+        # Define custom objects for model loading
+        custom_objects = {
+            'F1Score': _get_f1_metric_class()
+        }
+        
+        model = tf.keras.models.load_model(str(model_path), custom_objects=custom_objects)
+        print(f"✅ Model loaded successfully: {model_path}")
+        return model
+        
+    except Exception as e:
+        print(f"❌ Error loading model from {model_path}: {e}")
+        raise
+
+def _get_f1_metric_class():
+    """Get F1 score metric class for model loading compatibility."""
+    class F1Score(tf.keras.metrics.Metric):
+        def __init__(self, name='f1_score', **kwargs):
+            super().__init__(name=name, **kwargs)
+            self.precision = tf.keras.metrics.Precision()
+            self.recall = tf.keras.metrics.Recall()
+        
+        def update_state(self, y_true, y_pred, sample_weight=None):
+            self.precision.update_state(y_true, y_pred, sample_weight)
+            self.recall.update_state(y_true, y_pred, sample_weight)
+        
+        def result(self):
+            p = self.precision.result()
+            r = self.recall.result()
+            return 2 * ((p * r) / (p + r + tf.keras.backend.epsilon()))
+        
+        def reset_state(self):
+            self.precision.reset_state()
+            self.recall.reset_state()
+    
+    return F1Score
+
+def predict_single_image(model: tf.keras.Model, image_path: str, 
+                        preprocess_fn: Optional[callable] = None,
+                        img_size: Tuple[int, int] = (224, 224)) -> np.ndarray:
+    """
+    Run prediction on a single image using provided model.
+    
+    Args:
+        model: Loaded Keras model
+        image_path: Path to image file
+        preprocess_fn: Optional preprocessing function (default: standard normalization)
+        img_size: Image resize dimensions
+        
+    Returns:
+        Prediction probabilities array
+        
+    Raises:
+        FileNotFoundError: If image file doesn't exist
+        Exception: If prediction fails
+    """
+    image_path = Path(image_path)
+    
+    if not image_path.exists():
+        raise FileNotFoundError(f"Image not found: {image_path}")
+    
+    try:
+        # Load and preprocess image
+        image = tf.io.read_file(str(image_path))
+        image = tf.image.decode_image(image, channels=3, expand_animations=False)
+        image = tf.cast(image, tf.float32)
+        image = tf.image.resize(image, img_size)
+        
+        # Apply preprocessing
+        if preprocess_fn is not None:
+            image = preprocess_fn(image)
+        else:
+            # Standard normalization (ImageNet stats)
+            image = image / 255.0
+            image = tf.image.per_image_standardization(image)
+        
+        # Add batch dimension
+        image = tf.expand_dims(image, 0)
+        
+        # Make prediction
+        predictions = model(image, training=False)
+        return predictions.numpy()
+        
+    except Exception as e:
+        print(f"❌ Error predicting image {image_path}: {e}")
+        raise
+
 @dataclass
 class PredictionResult:
     """Structured prediction result with confidence and explanations."""
