@@ -18,15 +18,14 @@ import sys
 import time
 import json
 
-# Add src to path for imports
-src_path = Path(__file__).parent.parent.parent / 'src'
-sys.path.insert(0, str(src_path))
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 try:
-    # Import directly from the inference.py file
-    import inference
-    from inference import PlantDiseaseInference, process_directory
-    from data_utils import PlantDiseaseDataLoader
+    # Import from src modules
+    from src.inference import PlantDiseaseInference, process_directory
+    from src.data_utils import PlantDiseaseDataLoader
     INFERENCE_AVAILABLE = True
 except ImportError as e:
     st.error(f"Import error: {e}")
@@ -95,8 +94,6 @@ st.markdown("""
     .confidence-low { color: #dc3545; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
-
-""")
 
 def get_fallback_classes():
     """Get fallback class names when data loading fails."""
@@ -381,10 +378,12 @@ def main():
                 # Risk level indicator
                 risk_style = get_risk_level_style(result['risk_level'])
                 confidence_class = 'high' if result['confidence'] > 0.8 else 'medium' if result['confidence'] > 0.6 else 'low'
+                risk_emoji = "🚨"
+                plant_emoji = "🌿"
                 st.markdown(f"""
                 <div class="metric-container {risk_style}">
-                    <h3>🚨 Risk Level: {result['risk_level'].upper()}</h3>
-                    <h2>🌿 {result['class_name'].replace('_', ' ').title()}</h2>
+                    <h3>{risk_emoji} Risk Level: {result['risk_level'].upper()}</h3>
+                    <h2>{plant_emoji} {result['class_name'].replace('_', ' ').title()}</h2>
                     <p><strong>Confidence:</strong> 
                     <span class="confidence-{confidence_class}">
                     {result['confidence']:.1%}</span></p>
