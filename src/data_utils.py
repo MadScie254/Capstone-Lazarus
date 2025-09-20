@@ -352,6 +352,77 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     
     return stats
 
+    def get_dataset_stats(self) -> Dict[str, Any]:
+        """Get comprehensive dataset statistics (alias for scan_dataset for compatibility)."""
+        return self.scan_dataset()
+    
+    def analyze_class_distribution(self) -> Dict[str, int]:
+        """Analyze class distribution and return counts."""
+        if not self.class_counts:
+            self.scan_dataset()
+        return self.class_counts
+    
+    def get_all_image_paths_and_labels(self):
+        """Get all image paths and their corresponding labels."""
+        all_paths = []
+        all_labels = []
+        
+        if not self.class_names:
+            self.scan_dataset()
+        
+        # Collect all image paths and labels
+        for idx, class_name in enumerate(self.class_names):
+            class_dir = self.data_dir / class_name
+            image_files = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+            
+            for img_path in image_files:
+                all_paths.append(str(img_path))
+                all_labels.append(idx)
+        
+        return all_paths, all_labels
+    
+    def visualize_class_distribution(self, save_path: Optional[str] = None):
+        """Create interactive visualizations of class distribution."""
+        if not self.class_counts:
+            self.scan_dataset()
+        
+        # Create DataFrame for visualization
+        df = pd.DataFrame([
+            {'Class': class_name, 'Count': count, 'Plant_Type': self._get_plant_type(class_name)}
+            for class_name, count in self.class_counts.items()
+        ])
+        
+        # Interactive bar chart
+        fig = px.bar(
+            df,
+            x='Class',
+            y='Count',
+            color='Plant_Type',
+            title=f'Plant Disease Dataset Distribution - {sum(self.class_counts.values()):,} Total Images',
+            labels={'Count': 'Number of Images'},
+            height=600
+        )
+        fig.update_layout(xaxis_tickangle=-45)
+        
+        if save_path:
+            fig.write_html(save_path)
+        else:
+            fig.show()
+        
+        return fig
+    
+    def _get_plant_type(self, class_name: str) -> str:
+        """Extract plant type from class name."""
+        class_lower = class_name.lower()
+        if 'corn' in class_lower or 'maize' in class_lower:
+            return 'Corn'
+        elif 'potato' in class_lower:
+            return 'Potato'
+        elif 'tomato' in class_lower:
+            return 'Tomato'
+        else:
+            return 'Other'
+
 if __name__ == "__main__":
     # Example usage
     loader = PlantDiseaseDataLoader("data", img_size=(224, 224), batch_size=32)

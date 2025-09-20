@@ -96,6 +96,30 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+""")
+
+def get_fallback_classes():
+    """Get fallback class names when data loading fails."""
+    return [
+        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+        "Corn_(maize)___Common_rust_",
+        "Corn_(maize)___healthy", 
+        "Corn_(maize)___Northern_Leaf_Blight",
+        "Potato___Early_blight",
+        "Potato___healthy",
+        "Potato___Late_blight",
+        "Tomato___Bacterial_spot",
+        "Tomato___Early_blight",
+        "Tomato___healthy",
+        "Tomato___Late_blight",
+        "Tomato___Leaf_Mold",
+        "Tomato___Septoria_leaf_spot",
+        "Tomato___Spider_mites Two-spotted_spider_mite",
+        "Tomato___Target_Spot",
+        "Tomato___Tomato_mosaic_virus",
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus"
+    ]
+
 @st.cache_resource
 def load_inference_engine():
     """Load the inference engine (cached for performance)."""
@@ -106,34 +130,22 @@ def load_inference_engine():
         model_files = list(models_dir.glob('*.h5'))
         
         # Load class names from data directory structure
-        try:
-            data_loader = PlantDiseaseDataLoader("../data")
-            dataset_stats = data_loader.scan_dataset()
-            class_names = data_loader.class_names
-        except:
-            # Fallback class names if data loading fails
-            class_names = [
-                "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
-                "Corn_(maize)___Common_rust_",
-                "Corn_(maize)___healthy", 
-                "Corn_(maize)___Northern_Leaf_Blight",
-                "Potato___Early_blight",
-                "Potato___healthy",
-                "Potato___Late_blight",
-                "Tomato___Bacterial_spot",
-                "Tomato___Early_blight",
-                "Tomato___healthy",
-                "Tomato___Late_blight",
-                "Tomato___Leaf_Mold",
-                "Tomato___Septoria_leaf_spot",
-                "Tomato___Spider_mites Two-spotted_spider_mite",
-                "Tomato___Target_Spot",
-                "Tomato___Tomato_mosaic_virus",
-                "Tomato___Tomato_Yellow_Leaf_Curl_Virus"
-            ]
+        if PlantDiseaseDataLoader:
+            try:
+                # Get the data directory from the workspace root
+                app_dir = Path(__file__).parent.parent.parent
+                data_dir = app_dir / 'data'
+                data_loader = PlantDiseaseDataLoader(str(data_dir))
+                dataset_stats = data_loader.scan_dataset()
+                class_names = data_loader.class_names
+            except Exception as e:
+                st.warning(f"Could not load dataset stats: {e}")
+                class_names = get_fallback_classes()
+        else:
+            class_names = get_fallback_classes()
         
         # Load trained model if available
-        if model_files:
+        if model_files and PlantDiseaseInference:
             try:
                 model_path = str(model_files[0])
                 inference_engine = PlantDiseaseInference(model_path, class_names)
@@ -142,7 +154,10 @@ def load_inference_engine():
                 st.warning(f"Could not load trained model: {model_error}")
                 return None, class_names
         else:
-            st.info("🏗️ No trained models found. Please train a model using the notebooks first.")
+            if not model_files:
+                st.info("🏗️ No trained models found. Please train a model using the notebooks first.")
+            if not PlantDiseaseInference:
+                st.warning("⚠️ Inference engine not available. Using mock predictions.")
             return None, class_names
         
     except Exception as e:
@@ -365,12 +380,13 @@ def main():
                 
                 # Risk level indicator
                 risk_style = get_risk_level_style(result['risk_level'])
+                confidence_class = 'high' if result['confidence'] > 0.8 else 'medium' if result['confidence'] > 0.6 else 'low'
                 st.markdown(f"""
                 <div class="metric-container {risk_style}">
                     <h3>🚨 Risk Level: {result['risk_level'].upper()}</h3>
                     <h2>🌿 {result['class_name'].replace('_', ' ').title()}</h2>
                     <p><strong>Confidence:</strong> 
-                    <span class="confidence-{'high' if result['confidence'] > 0.8 else 'medium' if result['confidence'] > 0.6 else 'low'}">
+                    <span class="confidence-{confidence_class}">
                     {result['confidence']:.1%}</span></p>
                 </div>
                 """, unsafe_allow_html=True)
