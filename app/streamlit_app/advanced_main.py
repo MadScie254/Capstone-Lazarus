@@ -42,7 +42,7 @@ try:
     from src.ensembling import EnsemblePredictor, EnsembleConfig
     from src.interpretability import GradCAM, MultiModelGradCAM
     from src.data_utils import PlantDiseaseDataLoader
-    from src.inference import ModelInference
+    from src.inference import PlantDiseaseInference
 except ImportError as e:
     st.error(f"Import error: {e}. Please ensure all modules are available.")
     st.stop()
