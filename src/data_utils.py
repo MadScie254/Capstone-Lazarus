@@ -5,6 +5,7 @@ Comprehensive data loading, preprocessing, and augmentation utilities for plant 
 """
 
 import os
+import random
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -104,6 +105,10 @@ class PlantDiseaseDataLoader:
                              random_state: int = 42) -> Tuple[Tuple[List, List], Tuple[List, List], Tuple[List, List]]:
         """Create stratified train/val/test splits maintaining class balance."""
         print("📊 Creating balanced dataset splits...")
+        
+        # Ensure class names are populated
+        if not self.class_names:
+            self.scan_dataset()
         
         all_paths = []
         all_labels = []
@@ -233,40 +238,6 @@ class PlantDiseaseDataLoader:
         
         return dataset
 
-def visualize_class_distribution(class_counts: Dict[str, int], save_path: Optional[str] = None) -> go.Figure:
-    """Create interactive Plotly visualization of class distribution."""
-    
-    # Sort by count for better visualization
-    sorted_classes = dict(sorted(class_counts.items(), key=lambda x: x[1], reverse=True))
-    
-    # Create color palette
-    colors = px.colors.qualitative.Set3
-    
-    # Create bar chart
-    fig = go.Figure(data=[
-        go.Bar(
-            x=list(sorted_classes.keys()),
-            y=list(sorted_classes.values()),
-            marker_color=colors[:len(sorted_classes)],
-            text=list(sorted_classes.values()),
-            textposition='auto',
-        )
-    ])
-    
-    fig.update_layout(
-        title="🌱 Plant Disease Class Distribution",
-        xaxis_title="Disease Classes",
-        yaxis_title="Number of Images",
-        template="plotly_white",
-        height=600,
-        xaxis_tickangle=45
-    )
-    
-    if save_path:
-        fig.write_html(save_path)
-    
-    return fig
-
 def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, Any]:
     """Analyze image quality metrics across dataset."""
     print(f"🔍 Analyzing image quality (sampling {sample_size} images)...")
@@ -291,7 +262,7 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     
     # Sample images for analysis
     if len(all_images) > sample_size:
-        sample_images = np.random.choice(all_images, sample_size, replace=False)
+        sample_images = random.sample(all_images, sample_size)
     else:
         sample_images = all_images
     
@@ -352,9 +323,116 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     
     return stats
 
-    def get_dataset_stats(self) -> Dict[str, Any]:
-        """Get comprehensive dataset statistics (alias for scan_dataset for compatibility)."""
-        return self.scan_dataset()
+    def get_dataset_stats(self, compute_image_shape: bool = False, sample_max: int = 500) -> Dict[str, Any]:
+        """Get comprehensive dataset statistics with defensive programming.
+        
+        Args:
+            compute_image_shape: Whether to compute mean image shape (can be slow)
+            sample_max: Maximum number of images to sample for shape computation
+            
+        Returns:
+            Dict containing: total_images, valid_images, corrupted_images, num_classes,
+            class_distribution, class_names, imbalance_ratio, mean_image_shape, dataframe
+            
+        Raises:
+            FileNotFoundError: If data directory doesn't exist
+        """
+        if not self.data_dir.exists():
+            raise FileNotFoundError(f"Data directory not found: {self.data_dir}")
+        
+        print("🔍 Computing comprehensive dataset statistics...")
+        
+        stats = {
+            'total_images': 0,
+            'valid_images': 0,
+            'corrupted_images': 0,
+            'num_classes': 0,
+            'class_distribution': {},
+            'class_names': [],
+            'imbalance_ratio': 0.0,
+            'mean_image_shape': None,
+            'dataframe': None
+        }
+        
+        image_data = []
+        corrupted_files = []
+        
+        # Scan all subdirectories
+        for class_dir in self.data_dir.iterdir():
+            if class_dir.is_dir():
+                class_name = class_dir.name
+                image_files = list(class_dir.glob('*.jpg')) + list(class_dir.glob('*.JPG')) + list(class_dir.glob('*.png'))
+                valid_count = 0
+                
+                for img_path in image_files:
+                    stats['total_images'] += 1
+                    
+                    # Check if image is valid
+                    try:
+                        with Image.open(img_path) as img:
+                            img.verify()  # Verify it's a valid image
+                        valid_count += 1
+                        stats['valid_images'] += 1
+                        
+                        # Add to dataframe data
+                        image_data.append({
+                            'image_path': str(img_path),
+                            'class_name': class_name,
+                            'filename': img_path.name,
+                            'file_size_mb': img_path.stat().st_size / (1024 * 1024)
+                        })
+                        
+                    except (OSError, IOError) as e:
+                        print(f"⚠️ Corrupted image: {img_path} - {e}")
+                        corrupted_files.append(str(img_path))
+                        stats['corrupted_images'] += 1
+                
+                if valid_count > 0:
+                    stats['class_distribution'][class_name] = valid_count
+                    stats['class_names'].append(class_name)
+        
+        stats['num_classes'] = len(stats['class_names'])
+        
+        # Calculate imbalance ratio
+        if stats['class_distribution']:
+            counts = list(stats['class_distribution'].values())
+            stats['imbalance_ratio'] = max(counts) / min(counts)
+        
+        # Create DataFrame
+        stats['dataframe'] = pd.DataFrame(image_data)
+        
+        # Compute mean image shape if requested
+        if compute_image_shape and image_data:
+            print(f"📐 Computing mean image shape from {min(len(image_data), sample_max)} samples...")
+            sample_data = random.sample(image_data, min(len(image_data), sample_max))
+            shapes = []
+            
+            for item in sample_data:
+                try:
+                    with Image.open(item['image_path']) as img:
+                        shapes.append(img.size[::-1] + (len(img.getbands()),))  # (H, W, C)
+                except Exception as e:
+                    print(f"⚠️ Could not read shape for {item['image_path']}: {e}")
+                    continue
+            
+            if shapes:
+                mean_shape = tuple(int(np.mean([s[i] for s in shapes])) for i in range(len(shapes[0])))
+                stats['mean_image_shape'] = mean_shape
+        
+        # Update instance variables
+        self.class_names = stats['class_names']
+        self.class_counts = stats['class_distribution']
+        
+        print(f"✅ Dataset statistics complete:")
+        print(f"   📊 Total Images: {stats['total_images']:,}")
+        print(f"   ✅ Valid Images: {stats['valid_images']:,}")
+        print(f"   ❌ Corrupted Images: {stats['corrupted_images']}")
+        print(f"   🏷️  Classes: {stats['num_classes']}")
+        print(f"   ⚖️  Imbalance Ratio: {stats['imbalance_ratio']:.2f}")
+        if stats['mean_image_shape']:
+            print(f"   📐 Mean Image Shape: {stats['mean_image_shape']}")
+        
+        return stats
     
     def analyze_class_distribution(self) -> Dict[str, int]:
         """Analyze class distribution and return counts."""
