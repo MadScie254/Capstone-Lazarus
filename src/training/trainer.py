@@ -3,6 +3,8 @@ Training Engine for CAPSTONE-LAZARUS
 ====================================
 """
 
+import os
+import random
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -16,6 +18,27 @@ import time
 from src.config import Config
 
 logger = logging.getLogger(__name__)
+
+def set_reproducible_seeds(seed: int = 42):
+    """Set all random seeds for reproducible training."""
+    print(f"🌱 Setting reproducible seeds: {seed}")
+    
+    # Set Python built-in random seed
+    random.seed(seed)
+    
+    # Set NumPy seed
+    np.random.seed(seed)
+    
+    # Set TensorFlow seed
+    tf.random.set_seed(seed)
+    
+    # Set environment variables for deterministic behavior
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
+    os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+    
+    # Configure TensorFlow for deterministic operations
+    tf.config.experimental.enable_op_determinism()
 
 class Trainer:
     """Advanced training engine with comprehensive features"""
@@ -95,6 +118,9 @@ class Trainer:
             training_time = time.time() - start_time
             logger.info(f"Training completed in {training_time:.2f} seconds")
             
+            # Save final model
+            self.save_final_model()
+            
             # Log final metrics
             if mlflow_logger:
                 mlflow_logger.log_metric("training_time_seconds", training_time)
@@ -146,6 +172,35 @@ class Trainer:
         
         return predictions
     
+    def save_final_model(self, model_name: str = "final_model.h5"):
+        """Save the final trained model with proper directory structure."""
+        if self.model is None:
+            logger.warning("No model to save")
+            return
+        
+        # Ensure models directory exists
+        models_dir = Path("models")
+        models_dir.mkdir(exist_ok=True)
+        
+        # Save the final model
+        model_path = models_dir / model_name
+        self.model.save(str(model_path))
+        logger.info(f"✅ Final model saved to: {model_path}")
+        
+        # Also save the best model (from checkpoints if available)
+        checkpoint_dir = Path("models") / "checkpoints"
+        if checkpoint_dir.exists():
+            checkpoint_files = list(checkpoint_dir.glob("*.h5"))
+            if checkpoint_files:
+                # Find the best checkpoint by name (assuming val_acc in filename)
+                best_checkpoint = max(checkpoint_files, key=lambda x: x.name)
+                best_model_path = models_dir / "best_model.h5"
+                
+                # Copy the best checkpoint to main models directory
+                import shutil
+                shutil.copy2(best_checkpoint, best_model_path)
+                logger.info(f"✅ Best model saved to: {best_model_path}")
+
     def _setup_callbacks(self, mlflow_logger: Optional[Any] = None) -> List[keras.callbacks.Callback]:
         """Setup training callbacks"""
         
