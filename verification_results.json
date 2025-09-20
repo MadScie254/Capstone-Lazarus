@@ -1,0 +1,116 @@
+{
+  "timestamp": "2025-09-20T18:09:53.711069",
+  "system_info": {
+    "tensorflow_version": "2.20.0",
+    "python_version": "3.13.7",
+    "gpu_available": false
+  },
+  "tests": {
+    "imports": {
+      "status": "passed",
+      "failed_imports": [],
+      "successful_imports": [
+        "src.training.pipeline",
+        "src.models.architectures",
+        "src.ensembling",
+        "src.interpretability",
+        "src.data_utils",
+        "tensorflow",
+        "streamlit",
+        "plotly",
+        "sklearn",
+        "numpy",
+        "pandas",
+        "cv2",
+        "PIL"
+      ],
+      "warnings": []
+    },
+    "architectures": {
+      "status": "warning",
+      "tested_architectures": [],
+      "successful_architectures": [],
+      "failed_architectures": [],
+      "performance_data": {}
+    },
+    "training_pipeline": {
+      "status": "passed",
+      "components_tested": [],
+      "successful_components": [
+        "TrainingPipeline",
+        "ModelRegistry",
+        "Configuration classes"
+      ],
+      "failed_components": []
+    },
+    "ensemble_system": {
+      "status": "passed",
+      "components_tested": [],
+      "successful_components": [
+        "EnsemblePredictor",
+        "EnsembleConfig",
+        "Multi-model support"
+      ],
+      "failed_components": []
+    },
+    "interpretability": {
+      "status": "failed",
+      "components_tested": [],
+      "successful_components": [],
+      "failed_components": [],
+      "error": "'Dense' object has no attribute 'output_shape'",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\verify_system.py\", line 234, in test_interpretability\n    verify_grad_cam_functionality()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 581, in verify_grad_cam_functionality\n    grad_cam = GradCAM(test_model, model_name=\"test_model\")\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 53, in __init__\n    self.target_layer_name = target_layer or self._find_target_layer()\n                                             ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\src\\interpretability.py\", line 71, in _find_target_layer\n    if len(layer.output_shape) == 4:  # (batch, height, width, channels)\n           ^^^^^^^^^^^^^^^^^^\nAttributeError: 'Dense' object has no attribute 'output_shape'\n"
+    },
+    "data_utils": {
+      "status": "passed",
+      "components_tested": [],
+      "successful_components": [
+        "PlantDiseaseDataLoader"
+      ],
+      "failed_components": []
+    },
+    "streamlit_app": {
+      "status": "passed",
+      "components_tested": [],
+      "successful_components": [
+        "streamlit_app",
+        "plotly_integration",
+        "dependencies"
+      ],
+      "failed_components": []
+    },
+    "integration": {
+      "status": "passed",
+      "workflows_tested": [],
+      "successful_workflows": [
+        "training_orchestrator",
+        "configuration_integration"
+      ],
+      "failed_workflows": []
+    }
+  },
+  "overall_status": "passed",
+  "summary": {
+    "verification_completed": true,
+    "total_tests": 8,
+    "passed_tests": 6,
+    "warning_tests": 1,
+    "failed_tests": 1,
+    "readiness_score": 0.8125,
+    "deployment_status": "staging_ready",
+    "verification_time": "2025-09-20T18:15:31.939707"
+  },
+  "deployment_assessment": {
+    "readiness_score": 0.8125,
+    "total_tests": 8,
+    "passed_tests": 6,
+    "warning_tests": 1,
+    "failed_tests": 1,
+    "deployment_status": "staging_ready",
+    "recommendations": [
+      "\u26a0\ufe0f System ready for staging - resolve warnings before production",
+      "\ud83d\udd34 Fix 1 failed test(s)",
+      "\ud83d\udfe1 Address 1 warning(s)"
+    ]
+  }
+}

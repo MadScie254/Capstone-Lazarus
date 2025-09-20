@@ -155,13 +155,13 @@ def get_preprocessing_layer(architecture: str) -> tf.keras.layers.Layer:
         return tf.keras.layers.Lambda(lambda x: x)
         
     elif architecture == 'resnet50':
-        return tf.keras.applications.resnet.preprocess_input
+        return tf.keras.layers.Lambda(lambda x: tf.keras.applications.resnet.preprocess_input(x))
         
     elif architecture == 'mobilenet_v2':
-        return tf.keras.applications.mobilenet_v2.preprocess_input
+        return tf.keras.layers.Lambda(lambda x: tf.keras.applications.mobilenet_v2.preprocess_input(x))
         
     elif architecture == 'densenet121':
-        return tf.keras.applications.densenet.preprocess_input
+        return tf.keras.layers.Lambda(lambda x: tf.keras.applications.densenet.preprocess_input(x))
         
     else:
         # Default preprocessing (normalization to [-1, 1])
