@@ -565,15 +565,21 @@ class ImageFolderAlb(Dataset):
         
         # Apply transforms
         if self.transform:
-            if hasattr(self.transform, '__call__') and 'image' in str(self.transform):
-                # Albumentations transform
-                transformed = self.transform(image=image)
-                image = transformed['image']
+            if hasattr(self.transform, '__call__'):
+                # Check if it's Albumentations (has 'image' parameter signature)
+                try:
+                    # Try Albumentations format first
+                    transformed = self.transform(image=image)
+                    image = transformed['image']
+                except (TypeError, KeyError):
+                    # Fallback to torchvision format
+                    if isinstance(image, np.ndarray):
+                        image = Image.fromarray(image)
+                    image = self.transform(image)
             else:
-                # torchvision transform
+                # Direct tensor conversion
                 if isinstance(image, np.ndarray):
-                    image = Image.fromarray(image)
-                image = self.transform(image)
+                    image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
         else:
             # Convert to tensor if no transform provided
             if isinstance(image, np.ndarray):
@@ -593,14 +599,15 @@ def get_transforms(img_size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 
         train_transform = A.Compose([
             A.Resize(img_size, img_size),
             A.RandomRotate90(p=0.5),
-            A.Flip(p=0.5),
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.5),
             A.OneOf([
                 A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
                 A.HueSaturationValue(hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=1.0),
             ], p=0.5),
             A.OneOf([
                 A.GaussianBlur(blur_limit=3, p=1.0),
-                A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+                A.GaussNoise(var_limit=50.0, p=1.0),
             ], p=0.3),
             A.Normalize(mean=mean, std=std),
             ToTensorV2(),
