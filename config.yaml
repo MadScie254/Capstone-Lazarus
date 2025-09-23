@@ -1,0 +1,91 @@
+# CAPSTONE-LAZARUS: Training Configuration
+# ========================================
+# Fast, reproducible training for resource-limited laptops with Colab scaling
+
+# System Configuration
+seed: 42
+device: "auto"  # auto, cpu, cuda, mps
+
+# Model Configuration  
+backbone: "tf_efficientnet_b0"   # timm models: tf_efficientnet_b0, resnet18, mobilenetv3_small_100
+num_classes: 19
+pretrained: true
+
+# Data Configuration
+image_size: 224
+batch_size: 16              # Optimized for HP ZBook G5 (Quadro P2000 4GB VRAM)
+num_workers: 4
+pin_memory: true
+
+# Training Configuration
+epochs: 30
+lr: 1e-3
+weight_decay: 1e-4
+optimizer: "AdamW"
+scheduler: "cosine"         # cosine, step, plateau
+warmup_epochs: 3
+
+# Performance Optimization
+use_amp: true              # Automatic Mixed Precision for speed/memory
+gradient_accumulation_steps: 1
+use_ema: true              # Exponential Moving Average
+ema_decay: 0.9999
+
+# Transfer Learning Strategy
+freeze_backbone: true      # Start with frozen backbone
+unfreeze_after_epochs: 10  # Unfreeze for fine-tuning
+fine_tune_lr_factor: 0.1   # LR reduction for fine-tuning
+
+# Regularization
+dropout_rate: 0.3
+label_smoothing: 0.1
+mixup_alpha: 0.2
+cutmix_alpha: 1.0
+
+# Data Augmentation
+use_augmentations: true
+augmentation_strength: "medium"  # light, medium, heavy
+
+# Quantum Layer (EXPERIMENTAL - Default OFF)
+use_quantum: false         # Toggle quantum-classical hybrid
+quantum:
+  n_qubits: 4
+  n_layers: 3
+  embedding_dim: 64
+  device: "default.qubit"
+
+# Checkpointing & Monitoring
+save_dir: "./models"
+checkpoint_freq: 5
+early_stopping_patience: 10
+monitor_metric: "val_accuracy"
+save_best_only: true
+
+# Logging & Tracking
+use_wandb: false           # Weights & Biases integration
+wandb_project: "capstone-lazarus"
+log_freq: 100
+
+# Development & Testing
+subset_training: null      # Set to integer for subset training (e.g., 1000)
+debug_mode: false
+verbose: true
+
+# Resume Training
+resume_checkpoint: null    # Path to checkpoint for resuming
+
+# Hardware-Specific Optimizations
+# HP ZBook G5 Optimizations
+hp_zbook_mode: true        # Enable specific optimizations
+memory_efficient: true    # Reduce memory usage
+mixed_precision_opt_level: "O1"
+
+# Colab Optimizations  
+colab_mode: false          # Enable when running in Colab
+use_tpu: false             # TPU support for Colab
+drive_mount_path: "/content/drive/MyDrive/Capstone-Lazarus"
+
+# Model Export
+export_onnx: true          # Export to ONNX for deployment
+quantize_model: true       # Post-training quantization
+target_model_size_mb: 50   # Target size for edge deployment

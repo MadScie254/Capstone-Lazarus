@@ -1,5 +1,8 @@
-# Core ML/DL Dependencies
-tensorflow>=2.12.0,<2.21.0
+# Core ML/DL Dependencies  
+torch>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0              # PyTorch Image Models for pretrained backbones
+torchmetrics>=1.0.0      # Comprehensive metrics
 scikit-learn>=1.3.0
 numpy>=1.24.0
 pandas>=2.0.0
@@ -7,6 +10,17 @@ pillow>=9.5.0
 opencv-python>=4.8.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
+
+# Enhanced Augmentations
+albumentations>=1.3.0
+imgaug>=0.4.0
+
+# Quantum Computing (Optional - Experimental)
+pennylane>=0.32.0
+
+# Model Optimization & Export
+onnx>=1.14.0
+onnxruntime>=1.15.0
 
 # Interactive Visualization (Tableau-level)
 plotly>=5.15.0
