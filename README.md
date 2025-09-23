@@ -99,6 +99,42 @@ python tests/test_data_utils.py
 
 ## 🚀 Quick Start
 
+### 🎯 Balanced Subset Training (New!)
+
+**Perfect for laptops and quick experiments!** Create a small, balanced subset of your data for rapid prototyping:
+
+```bash
+# 1. Create a balanced subset (50 samples per class)
+python scripts/create_subset.py \
+    --data-dir data \
+    --subset-dir my_subset \
+    --samples-per-class 50 \
+    --seed 42
+
+# 2. Train on subset using CLI
+python src/train.py \
+    --data-dir data \
+    --subset-dir my_subset \
+    --samples-per-class 50 \
+    --epochs 10 \
+    --batch-size 16
+
+# 3. OR use the Jupyter notebook
+jupyter notebook notebooks/jupyter_subset_training.ipynb
+
+# 4. Quick test everything works
+bash scripts/quick_test.sh
+```
+
+**Key Benefits:**
+- ⚡ **Fast experiments** (minutes instead of hours)
+- 💻 **Laptop-friendly** (works with limited GPU/CPU)
+- 🎯 **Balanced sampling** (equal samples per class)
+- 🔄 **Deterministic** (reproducible results)
+- 🔗 **Symlink optimization** (saves disk space)
+
+### 🎓 Full Training Workflow
+
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
@@ -115,7 +151,62 @@ streamlit run app/streamlit_app.py
 
 ---
 
-## 📈 Success Metrics
+## � Project Structure
+
+```
+├── 📊 data/                          # Plant disease images (organized by class)
+├── 🔬 notebooks/                     # Jupyter analysis & training notebooks
+│   ├── eda_plant_diseases_clean.ipynb    # Data exploration (validated)
+│   ├── jupyter_subset_training.ipynb     # Quick subset training (NEW!)
+│   └── model_training.ipynb              # Full model training
+├── 🤖 src/                          # Core source code
+│   ├── data_utils.py                     # Data loading & preprocessing
+│   ├── train.py                          # CLI trainer for subsets (NEW!)
+│   ├── inference.py                      # Model inference utilities
+│   └── model_factory.py                  # Model architectures
+├── 🧪 scripts/                      # Utility scripts
+│   ├── create_subset.py                  # Balanced subset creation (NEW!)
+│   ├── quick_test.sh                     # End-to-end testing (NEW!)
+│   └── validate_*.py                     # Environment validation
+├── 🔧 tests/                        # Unit & integration tests
+│   ├── test_create_subset.py             # Subset creation tests (NEW!)
+│   └── test_data_utils.py                # Data utilities tests
+├── 📱 app/streamlit_app/            # Web dashboard
+└── 📋 requirements.txt               # Dependencies (updated with pytest)
+```
+
+---
+
+## 🧪 Testing & Validation
+
+**Comprehensive testing suite** to ensure reliability:
+
+```bash
+# Quick end-to-end test (recommended first step)
+bash scripts/quick_test.sh
+
+# Run unit tests
+python -m pytest tests/ -v
+
+# Test specific functionality
+python -m pytest tests/test_create_subset.py -v
+
+# Environment validation
+python scripts/validate_environment.py
+python scripts/validate_loader.py
+python scripts/validate_inference.py
+```
+
+**Testing Coverage:**
+- ✅ **Subset creation** with balanced sampling
+- ✅ **File operations** (symlinks, copying, directory structure)
+- ✅ **Data loading** with PyTorch and TensorFlow
+- ✅ **Model training** pipeline
+- ✅ **Deterministic behavior** (reproducible results)
+
+---
+
+## �📈 Success Metrics
 
 - **Macro F1 Score**: ≥ 0.85
 - **Critical Disease Recall**: ≥ 90%

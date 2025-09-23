@@ -501,6 +501,141 @@ def analyze_image_quality(data_dir: str, sample_size: int = 100) -> Dict[str, An
     return stats
 
 
+# =====================================================
+# PyTorch-specific utilities for subset training
+# =====================================================
+
+import torch
+from torch.utils.data import Dataset
+from torchvision import transforms
+try:
+    import albumentations as A
+    from albumentations.pytorch import ToTensorV2
+    ALBUMENTATIONS_AVAILABLE = True
+except ImportError:
+    print("⚠️ Albumentations not available for PyTorch utilities.")
+    A = None
+    ToTensorV2 = None
+    ALBUMENTATIONS_AVAILABLE = False
+
+class ImageFolderAlb(Dataset):
+    """PyTorch Dataset with Albumentations support for plant disease images"""
+    
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = Path(data_dir)
+        self.transform = transform
+        
+        # Collect all image files and their labels
+        self.samples = []
+        self.classes = []
+        
+        # Get sorted class directories
+        class_dirs = sorted([d for d in self.data_dir.iterdir() if d.is_dir()])
+        
+        for class_idx, class_dir in enumerate(class_dirs):
+            class_name = class_dir.name
+            self.classes.append(class_name)
+            
+            # Get all image files in this class directory
+            for img_file in class_dir.glob('*'):
+                if img_file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
+                    self.samples.append((str(img_file), class_idx))
+        
+        self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
+        
+        print(f"📁 ImageFolderAlb: {len(self.samples)} images, {len(self.classes)} classes")
+        for i, cls in enumerate(self.classes):
+            count = sum(1 for _, label in self.samples if label == i)
+            print(f"   {cls}: {count} images")
+    
+    def __len__(self):
+        return len(self.samples)
+    
+    def __getitem__(self, idx):
+        img_path, label = self.samples[idx]
+        
+        # Load image
+        try:
+            image = cv2.imread(img_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        except:
+            # Fallback to PIL
+            image = Image.open(img_path).convert('RGB')
+            image = np.array(image)
+        
+        # Apply transforms
+        if self.transform:
+            if hasattr(self.transform, '__call__') and 'image' in str(self.transform):
+                # Albumentations transform
+                transformed = self.transform(image=image)
+                image = transformed['image']
+            else:
+                # torchvision transform
+                if isinstance(image, np.ndarray):
+                    image = Image.fromarray(image)
+                image = self.transform(image)
+        else:
+            # Convert to tensor if no transform provided
+            if isinstance(image, np.ndarray):
+                image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
+        
+        return image, label
+
+
+def get_transforms(img_size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    """
+    Get training and validation transforms
+    Returns Albumentations transforms if available, otherwise torchvision
+    """
+    
+    if ALBUMENTATIONS_AVAILABLE and A is not None and ToTensorV2 is not None:
+        # Use Albumentations (preferred)
+        train_transform = A.Compose([
+            A.Resize(img_size, img_size),
+            A.RandomRotate90(p=0.5),
+            A.Flip(p=0.5),
+            A.OneOf([
+                A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
+                A.HueSaturationValue(hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=1.0),
+            ], p=0.5),
+            A.OneOf([
+                A.GaussianBlur(blur_limit=3, p=1.0),
+                A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+            ], p=0.3),
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),
+        ])
+        
+        val_transform = A.Compose([
+            A.Resize(img_size, img_size),
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2(),
+        ])
+        
+        print("✅ Using Albumentations transforms")
+        
+    else:
+        # Fallback to torchvision transforms
+        train_transform = transforms.Compose([
+            transforms.Resize((img_size, img_size)),
+            transforms.RandomRotation(10),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomVerticalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std)
+        ])
+        
+        val_transform = transforms.Compose([
+            transforms.Resize((img_size, img_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std)
+        ])
+        
+        print("⚠️ Using torchvision transforms (Albumentations not available)")
+    
+    return train_transform, val_transform
+
 
 if __name__ == "__main__":
     # Example usage
@@ -514,3 +649,13 @@ if __name__ == "__main__":
     class_weights = loader.compute_class_weights(y_train)
     
     print(f"Class weights: {class_weights}")
+    
+    # Test PyTorch utilities
+    if Path("data").exists():
+        print("\n🧪 Testing PyTorch utilities...")
+        try:
+            train_transform, val_transform = get_transforms(img_size=224)
+            dataset = ImageFolderAlb("data", transform=val_transform)
+            print(f"✅ PyTorch dataset created successfully with {len(dataset)} samples")
+        except Exception as e:
+            print(f"❌ Error testing PyTorch utilities: {e}")
