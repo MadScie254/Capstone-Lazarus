@@ -15,10 +15,9 @@ sys.path.append(str(Path(__file__).parent.parent / 'scripts'))
 
 # Import the functions we want to test
 from create_subset import (
-    collect_classes_and_samples, 
-    create_balanced_subset,
-    safe_symlink,
-    create_subset
+    collect_classes, 
+    create_subset,
+    safe_symlink
 )
 
 class TestCreateSubset:
