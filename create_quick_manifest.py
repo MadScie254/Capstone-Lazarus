@@ -122,9 +122,13 @@ class QuickFeatureExtractor:
         dataset = SimpleImageDataset(test_manifest['image_path'].tolist())
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=0)
         
-        # Extract features
-        all_features = []
-        processed_paths = []
+        # Create encoder directory structure
+        encoder_dir = self.features_dir / 'encoder_efficientnet_b0'
+        encoder_dir.mkdir(exist_ok=True)
+        
+        # Extract features and save individual NPZ files
+        feature_records = []
+        processed_count = 0
         
         with torch.no_grad():
             for batch_images, batch_paths in tqdm(dataloader, desc="Extracting"):
@@ -133,40 +137,38 @@ class QuickFeatureExtractor:
                 
                 # Convert to float16 for memory efficiency
                 features = features.cpu().numpy().astype(np.float16)
-                all_features.append(features)
-                processed_paths.extend(batch_paths)
+                
+                # Save individual feature files (expected format)
+                for i, (feature_vec, img_path) in enumerate(zip(features, batch_paths)):
+                    # Create image-specific filename
+                    img_path_obj = Path(img_path)
+                    image_id = f"{img_path_obj.parent.name}_{img_path_obj.stem}"
+                    feature_filename = f"img_{processed_count:04d}_{image_id}.npz"
+                    feature_file = encoder_dir / feature_filename
+                    
+                    # Save individual feature file
+                    np.savez_compressed(
+                        feature_file,
+                        features=feature_vec,
+                        image_path=img_path,
+                        image_id=image_id,
+                        extraction_time=datetime.now().isoformat()
+                    )
+                    
+                    # Add to manifest record
+                    feature_records.append({
+                        'image_id': image_id,
+                        'image_path': img_path,
+                        'class_name': img_path_obj.parent.name,
+                        'feature_file': str(feature_file),
+                        'feature_shape': str(feature_vec.shape),
+                        'extraction_time': datetime.now().isoformat()
+                    })
+                    
+                    processed_count += 1
         
-        # Combine all features
-        all_features = np.vstack(all_features)
-        print(f"   ✅ Extracted features: {all_features.shape}")
-        
-        # Save features as NPZ cache
-        encoder_dir = self.features_dir / 'encoder_efficientnet_b0'
-        encoder_dir.mkdir(exist_ok=True)
-        
-        features_file = encoder_dir / 'batch_features.npz'
-        np.savez_compressed(
-            features_file,
-            features=all_features,
-            image_paths=processed_paths,
-            extraction_time=datetime.now().isoformat()
-        )
-        
-        print(f"   💾 Features cached: {features_file}")
-        
-        # Update manifest with feature files
-        feature_records = []
-        for i, row in test_manifest.iterrows():
-            if i < len(all_features):
-                feature_records.append({
-                    'image_id': row['image_id'],
-                    'image_path': row['image_path'],
-                    'class_name': row['class_name'],
-                    'feature_file': str(features_file),
-                    'feature_index': i,
-                    'feature_shape': str(all_features[i].shape),
-                    'extraction_time': datetime.now().isoformat()
-                })
+        print(f"   ✅ Created {processed_count} individual feature files")
+        print(f"   💾 Features saved in: {encoder_dir}")
         
         return pd.DataFrame(feature_records)
 
