@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "created_at": "2025-09-29T00:51:15.637251",
+  "models": {
+    "demo_model": {
+      "model_path": "C:\\Users\\MadScie254\\Documents\\GitHub\\Capstone-Lazarus\\models\\best_models\\demo_model.h5",
+      "architecture": "simple_cnn",
+      "created_at": "2025-09-29T00:51:47.305118",
+      "metrics": {
+        "accuracy": 0.92,
+        "val_accuracy": 0.87
+      },
+      "status": "available",
+      "file_size": 54280,
+      "description": "Demo model for testing pipeline"
+    }
+  },
+  "metadata": {
+    "project_name": "CAPSTONE-LAZARUS",
+    "description": "Plant Disease Classification Models",
+    "classes": 19,
+    "input_shape": [
+      224,
+      224,
+      3
+    ]
+  }
+}

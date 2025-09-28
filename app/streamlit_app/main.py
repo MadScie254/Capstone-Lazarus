@@ -121,38 +121,86 @@ def get_fallback_classes():
 def load_inference_engine():
     """Load the inference engine (cached for performance)."""
     try:
-        # Check for trained models
-        models_dir = Path(__file__).parent.parent.parent / 'models'
-        models_dir.mkdir(exist_ok=True)
-        model_files = list(models_dir.glob('*.h5'))
+        # Look for trained models in multiple locations
+        app_dir = Path(__file__).parent.parent.parent
+        models_dir = app_dir / 'models'
         
-        # Load class names from data directory structure
-        if PlantDiseaseDataLoader:
+        # Search in multiple locations with priority order
+        search_locations = [
+            models_dir / "best_models",
+            models_dir / "checkpoints", 
+            models_dir,
+            app_dir / "experiments"
+        ]
+        
+        model_files = []
+        for location in search_locations:
+            if location.exists():
+                model_files.extend(list(location.glob('*.h5')))
+                model_files.extend(list(location.glob('*.keras')))
+                model_files.extend(list(location.glob('**/best_model.h5')))
+        
+        # Remove duplicates
+        model_files = list(set(model_files))
+        
+        # Try to load class names from multiple sources
+        class_names = []
+        class_sources = [
+            models_dir / "class_names.json",
+            app_dir / "reports" / "eda_summary.json",
+            app_dir / "data"  # Will scan directories
+        ]
+        
+        for source in class_sources:
+            if source.exists():
+                if source.name == "class_names.json":
+                    with open(source, 'r') as f:
+                        class_names = json.load(f)
+                    break
+                elif source.name == "eda_summary.json":
+                    with open(source, 'r') as f:
+                        eda_data = json.load(f)
+                        if 'class_names' in eda_data:
+                            class_names = eda_data['class_names']
+                            break
+                elif source.is_dir():  # data directory
+                    # Get class names from data directory structure
+                    class_dirs = [d for d in source.iterdir() if d.is_dir() and not d.name.startswith('.')]
+                    if class_dirs:
+                        class_names = [d.name for d in class_dirs]
+                        break
+        
+        # Fallback to PlantDiseaseDataLoader if needed
+        if not class_names and PlantDiseaseDataLoader:
             try:
-                # Get the data directory from the workspace root
-                app_dir = Path(__file__).parent.parent.parent
-                data_dir = app_dir / 'data'
-                data_loader = PlantDiseaseDataLoader(str(data_dir))
+                data_loader = PlantDiseaseDataLoader(str(app_dir / 'data'))
                 dataset_stats = data_loader.scan_dataset()
                 class_names = data_loader.class_names
             except Exception as e:
                 st.warning(f"Could not load dataset stats: {e}")
-                class_names = get_fallback_classes()
-        else:
+        
+        # Final fallback
+        if not class_names:
             class_names = get_fallback_classes()
         
         # Load trained model if available
         if model_files and PlantDiseaseInference:
             try:
+                # Sort models by modification time (newest first)
+                model_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
                 model_path = str(model_files[0])
+                
+                st.success(f"📦 Loaded model: {Path(model_path).name}")
                 inference_engine = PlantDiseaseInference(model_path, class_names)
                 return inference_engine, class_names
+                
             except Exception as model_error:
                 st.warning(f"Could not load trained model: {model_error}")
                 return None, class_names
         else:
             if not model_files:
                 st.info("🏗️ No trained models found. Please train a model using the notebooks first.")
+                st.info("💡 Models should be in: models/best_models/ or models/checkpoints/")
             if not PlantDiseaseInference:
                 st.warning("⚠️ Inference engine not available. Using mock predictions.")
             return None, class_names
