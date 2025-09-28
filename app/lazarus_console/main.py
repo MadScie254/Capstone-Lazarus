@@ -34,18 +34,18 @@ from routes.system_profiler import render_system_profiler
 from routes.settings import render_settings
 
 def main():
-    """Main application entry point"""
+    """Main application entry point with enhanced loading and error handling"""
     
     # Configure page
     st.set_page_config(
-        page_title="Lazarus Console",
+        page_title="Lazarus Console - AI Plant Disease Diagnostics",
         page_icon="🌱",
         layout="wide",
         initial_sidebar_state="collapsed",
         menu_items={
             'Get Help': None,
             'Report a Bug': None,
-            'About': "Lazarus Console - AI Plant Disease Diagnostics"
+            'About': "Lazarus Console - AI Plant Disease Diagnostics Mission Control"
         }
     )
     
@@ -56,12 +56,23 @@ def main():
     # Initialize global state
     initialize_global_state()
     
-    # Initialize managers
-    if 'model_manager' not in st.session_state:
-        st.session_state.model_manager = ModelManager(project_root)
-    
-    if 'dataset_manager' not in st.session_state:
-        st.session_state.dataset_manager = DatasetManager(project_root)
+    # Initialize managers with loading indicators
+    with st.spinner("🚀 Initializing Lazarus Console..."):
+        if 'model_manager' not in st.session_state:
+            try:
+                st.session_state.model_manager = ModelManager(project_root)
+                st.success("✅ Model Manager initialized", icon="🤖")
+            except Exception as e:
+                st.error(f"❌ Model Manager failed: {str(e)}")
+                st.session_state.model_manager = None
+        
+        if 'dataset_manager' not in st.session_state:
+            try:
+                st.session_state.dataset_manager = DatasetManager(project_root)
+                st.success("✅ Dataset Manager initialized", icon="📊")
+            except Exception as e:
+                st.error(f"❌ Dataset Manager failed: {str(e)}")
+                st.session_state.dataset_manager = None
     
     # Render mission header
     render_mission_header()
@@ -69,7 +80,7 @@ def main():
     # Get current route
     current_route = get_state('current_route', 'home')
     
-    # Route handling
+    # Route handling with better error management
     route_map = {
         'home': render_home,
         'dataset': render_dataset_explorer,
@@ -81,15 +92,23 @@ def main():
         'settings': render_settings
     }
     
-    # Render current route
+    # Render current route with enhanced error handling
     if current_route in route_map:
         try:
-            route_map[current_route]()
+            with st.container():
+                route_map[current_route]()
         except Exception as e:
-            st.error(f"Error rendering {current_route}: {str(e)}")
-            st.exception(e)
+            st.error(f"🚨 Error in {current_route} module: {str(e)}")
+            with st.expander("🔍 Error Details", expanded=False):
+                st.exception(e)
+            
+            # Fallback to home
+            st.info("🏠 Redirecting to Mission Control...")
+            set_state('current_route', 'home')
+            time.sleep(2)
+            st.rerun()
     else:
-        st.error(f"Unknown route: {current_route}")
+        st.error(f"❌ Unknown route: {current_route}")
         set_state('current_route', 'home')
         st.rerun()
 

@@ -35,6 +35,7 @@ class ModelManager:
         self.models_dir = self.project_root / 'models'
         self.best_models_dir = self.models_dir / 'best_models'
         self.model_registry_path = self.models_dir / 'model_registry.json'
+        self.registry_file = self.models_dir / 'model_registry.json'  # Added for compatibility
         
         # Load real model registry
         self.model_registry = self._load_model_registry()
@@ -48,6 +49,12 @@ class ModelManager:
         # Performance tracking
         self._benchmark_cache = {}
         self._last_inference_time = None
+        
+        # Initialize available models list
+        self.available_models = self._discover_available_models()
+        
+        # Initialize available models list
+        self.available_models = self._discover_available_models()
     
     def _load_model_registry(self) -> Dict[str, Any]:
         """Load the real model registry from JSON file"""
@@ -124,21 +131,35 @@ class ModelManager:
             return {}
     
     def _discover_available_models(self) -> List[str]:
-        """Discover available model files"""
+        """Discover available model files, prioritizing real trained models"""
         models = []
         
-        # Check best_models directory
+        # Check best_models directory for actual model files
         if self.best_models_dir.exists():
+            for file_path in self.best_models_dir.iterdir():
+                if file_path.suffix in ['.h5', '.keras', '.pt', '.pth', '.onnx']:
+                    model_name = file_path.stem
+                    # Skip demo models - prioritize real trained models
+                    if 'demo' not in model_name.lower():
+                        models.append(model_name)
+        
+        # Add demo models only if no real models found
+        if not models and self.best_models_dir.exists():
             for file_path in self.best_models_dir.iterdir():
                 if file_path.suffix in ['.h5', '.keras', '.pt', '.pth', '.onnx']:
                     models.append(file_path.stem)
         
-        # Also check models registry
-        for model_name in self.model_registry.keys():
-            if model_name not in models:
+        # Also check models registry for additional models
+        models_section = self.model_registry.get('models', {})
+        for model_name in models_section.keys():
+            if model_name not in models and 'demo' not in model_name.lower():
                 models.append(model_name)
         
-        return sorted(models)
+        # Sort with real models first
+        real_models = [m for m in models if 'demo' not in m.lower()]
+        demo_models = [m for m in models if 'demo' in m.lower()]
+        
+        return real_models + demo_models
     
     def refresh_available_models(self):
         """Refresh the list of available models"""
@@ -148,6 +169,30 @@ class ModelManager:
     def get_available_models(self) -> List[str]:
         """Get list of available models"""
         return self.available_models
+    
+    def get_default_model(self) -> str:
+        """Get the best default model, prioritizing real trained models"""
+        if not self.available_models:
+            return "No Models Available"
+        
+        # Priority order: plant_disease_classifier > quick_trained > others > demo
+        priority_models = [
+            'plant_disease_classifier_v1',
+            'quick_trained_model', 
+            'plant_disease_classifier',
+        ]
+        
+        for model_name in priority_models:
+            if model_name in self.available_models:
+                return model_name
+        
+        # If no priority models, use first non-demo model
+        for model in self.available_models:
+            if 'demo' not in model.lower():
+                return model
+                
+        # Fallback to first available model
+        return self.available_models[0]
     
     def get_model_info(self, model_name: str) -> Dict[str, Any]:
         """Get detailed model information"""

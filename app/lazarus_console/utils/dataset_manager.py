@@ -37,10 +37,8 @@ class DatasetManager:
         # Load real class names if available
         self.class_names = self._load_class_names()
         
-        # Cached data
-        self._manifest_cache = None
-        self._class_stats_cache = None
-        self._real_dataset_stats = None
+        # Initialize data structures
+        self._initialize_data()
     
     def _load_class_names(self) -> List[str]:
         """Load class names from the real model registry"""
@@ -56,6 +54,13 @@ class DatasetManager:
             return [d.name for d in self.data_dir.iterdir() if d.is_dir()]
         
         return []
+    
+    def _initialize_data(self):
+        """Initialize data structures after class names are loaded"""
+        # Cached data
+        self._manifest_cache = None
+        self._class_stats_cache = None
+        self._real_dataset_stats = None
         self._image_stats_cache = None
         
         # Load or create manifest
