@@ -94,7 +94,7 @@ def render_mission_status():
             delta=latency_status
         )
     
-    with status_col5:
+    with status_col5:``
         gpu_available = system_status.get('gpu_available', False)
         vram_usage = system_status.get('vram_usage', 0)
         st.metric(
