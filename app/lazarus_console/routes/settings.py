@@ -8,7 +8,7 @@ import json
 import os
 from datetime import datetime
 from components.state_manager import get_state, set_state, add_decision_log_entry
-from utils.theme import apply_theme
+from utils.theme import apply_dark_theme
 
 def render_settings():
     """Render settings interface"""

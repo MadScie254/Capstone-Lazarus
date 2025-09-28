@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import psutil
 import platform
+import time
 from datetime import datetime, timedelta
 from components.state_manager import get_state, set_state, add_decision_log_entry
 
