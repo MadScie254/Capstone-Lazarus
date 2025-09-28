@@ -19,15 +19,43 @@ import streamlit as st
 class DatasetManager:
     """Centralized dataset management and analysis"""
     
-    def __init__(self, project_root: Path):
-        self.project_root = Path(project_root)
+    def __init__(self, project_root: Optional[Path] = None):
+        """Initialize dataset manager with real project paths"""
+        if project_root is None:
+            # Default to current directory structure
+            self.project_root = Path(".")
+        else:
+            self.project_root = Path(project_root)
+            
         self.data_dir = self.project_root / 'data'
         self.features_dir = self.project_root / 'features'
+        self.models_dir = self.project_root / 'models'
         self.manifest_file = self.features_dir / 'manifest_features.v001.csv'
+        self.model_registry_path = self.models_dir / 'model_registry.json'
+        self.class_names_path = self.models_dir / 'class_names.json'
+        
+        # Load real class names if available
+        self.class_names = self._load_class_names()
         
         # Cached data
         self._manifest_cache = None
         self._class_stats_cache = None
+        self._real_dataset_stats = None
+    
+    def _load_class_names(self) -> List[str]:
+        """Load class names from the real model registry"""
+        if self.class_names_path.exists():
+            try:
+                with open(self.class_names_path, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Warning: Could not load class names: {e}")
+        
+        # Fallback: scan data directory for class folders
+        if self.data_dir.exists():
+            return [d.name for d in self.data_dir.iterdir() if d.is_dir()]
+        
+        return []
         self._image_stats_cache = None
         
         # Load or create manifest

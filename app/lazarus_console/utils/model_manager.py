@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 import time
+import json
 import streamlit as st
 from datetime import datetime
 
@@ -24,10 +25,43 @@ except ImportError:
 class ModelManager:
     """Centralized model management with caching and performance tracking"""
     
-    def __init__(self, project_root: Path):
-        self.project_root = Path(project_root)
+    def __init__(self, project_root: Optional[Path] = None):
+        """Initialize model manager with real model registry"""
+        if project_root is None:
+            self.project_root = Path(".")
+        else:
+            self.project_root = Path(project_root)
+            
         self.models_dir = self.project_root / 'models'
         self.best_models_dir = self.models_dir / 'best_models'
+        self.model_registry_path = self.models_dir / 'model_registry.json'
+        
+        # Load real model registry
+        self.model_registry = self._load_model_registry()
+        
+        # Model cache and current model tracking
+        self._model_cache = {}
+        self._onnx_cache = {}
+        self._current_model = None
+        self._current_model_info = None
+        
+        # Performance tracking
+        self._benchmark_cache = {}
+        self._last_inference_time = None
+    
+    def _load_model_registry(self) -> Dict[str, Any]:
+        """Load the real model registry from JSON file"""
+        if not self.model_registry_path.exists():
+            print(f"Warning: Model registry not found at {self.model_registry_path}")
+            return {}
+        
+        try:
+            with open(self.model_registry_path, 'r') as f:
+                data = json.load(f)
+                return data.get('models', {})
+        except Exception as e:
+            print(f"Error loading model registry: {e}")
+            return {}
         self.registry_file = self.models_dir / 'model_registry.json'
         self.class_names_file = self.models_dir / 'class_names.json'
         
