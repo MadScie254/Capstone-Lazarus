@@ -158,7 +158,8 @@ class Trainer:
         train_loader: DataLoader,
         val_loader: DataLoader,
         config: Dict[str, Any],
-        save_dir: str = "./checkpoints"
+        save_dir: str = "./checkpoints",
+        device_override: Optional[str] = None
     ):
         self.model = model
         self.train_loader = train_loader
@@ -168,7 +169,10 @@ class Trainer:
         self.save_dir.mkdir(parents=True, exist_ok=True)
         
         # Device setup
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device_override is not None:
+            self.device = torch.device(device_override)
+        else:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = self.model.to(self.device)
         
         logger.info(f"Training on device: {self.device}")

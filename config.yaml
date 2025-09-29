@@ -13,12 +13,12 @@ pretrained: true
 
 # Data Configuration
 image_size: 224
-batch_size: 16              # Optimized for HP ZBook G5 (Quadro P2000 4GB VRAM)
+batch_size: 8               # Safe default for HP ZBook G5 (Quadro P2000 4GB VRAM)
 num_workers: 4
 pin_memory: true
 
 # Training Configuration
-epochs: 30
+epochs: 20
 lr: 1e-3
 weight_decay: 1e-4
 optimizer: "AdamW"
@@ -89,3 +89,51 @@ drive_mount_path: "/content/drive/MyDrive/Capstone-Lazarus"
 export_onnx: true          # Export to ONNX for deployment
 quantize_model: true       # Post-training quantization
 target_model_size_mb: 50   # Target size for edge deployment
+
+# Master Training Orchestration
+training_suite:
+  fast_test:
+    enabled: true
+    sample_ratio: 0.02           # Use 2% of the data for smoke runs
+    max_images_per_class: 2
+    epochs: 1
+    notes: "Classifier-head only sanity check"
+  default:
+    freeze_backbone: true
+    finetune:
+      enabled: true
+      unfreeze_blocks: 4         # Unfreeze last N blocks for light FT
+      epochs: 6
+    head_training_epochs: 4
+    batch_size_floor: 4          # Floor when auto-reducing batch size
+    patience: 2
+
+models:
+  - name: "efficientnet_b0"
+    backbone: "tf_efficientnet_b0"
+    image_size: 224
+    batch_size: 8
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    phases:
+      - type: "head"
+        epochs: 4
+        freeze_backbone: true
+      - type: "finetune"
+        epochs: 6
+        unfreeze_blocks: 4
+    notes: "Primary baseline"
+  - name: "mobilenet_v3_small"
+    backbone: "mobilenetv3_small"
+    image_size: 224
+    batch_size: 8
+    learning_rate: 0.0007
+    weight_decay: 0.00005
+    phases:
+      - type: "head"
+        epochs: 3
+        freeze_backbone: true
+      - type: "finetune"
+        epochs: 5
+        unfreeze_blocks: 6
+    notes: "Mobile-friendly baseline"

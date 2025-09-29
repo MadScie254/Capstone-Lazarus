@@ -1,0 +1,46 @@
+{
+  "models": [
+    {
+      "name": "efficientnet_b0",
+      "backbone": "tf_efficientnet_b0",
+      "image_size": 224,
+      "batch_size": 8,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "phases": [
+        {"type": "head", "epochs": 4, "freeze_backbone": true},
+        {"type": "finetune", "epochs": 6, "unfreeze_blocks": 4}
+      ],
+      "tags": ["baseline", "amp"],
+      "notes": "Reference model used for production ensemble"
+    },
+    {
+      "name": "mobilenet_v3_small",
+      "backbone": "mobilenetv3_small",
+      "image_size": 224,
+      "batch_size": 8,
+      "learning_rate": 0.0007,
+      "weight_decay": 0.00005,
+      "phases": [
+        {"type": "head", "epochs": 3, "freeze_backbone": true},
+        {"type": "finetune", "epochs": 5, "unfreeze_blocks": 6}
+      ],
+      "tags": ["edge"],
+      "notes": "Optimized for mobile/edge deployments"
+    },
+    {
+      "name": "resnet18",
+      "backbone": "resnet18",
+      "image_size": 224,
+      "batch_size": 8,
+      "learning_rate": 0.0008,
+      "weight_decay": 0.0001,
+      "phases": [
+        {"type": "head", "epochs": 4, "freeze_backbone": true},
+        {"type": "finetune", "epochs": 5, "unfreeze_blocks": 3}
+      ],
+      "tags": ["robust"],
+      "notes": "Robust classic architecture for ensemble diversity"
+    }
+  ]
+}
