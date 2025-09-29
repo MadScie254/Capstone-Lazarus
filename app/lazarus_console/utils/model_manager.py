@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 
 class ModelManager:
@@ -30,11 +30,17 @@ class ModelManager:
 
     def _extract_available_models(self) -> List[str]:
         models_section = self.model_registry.get("models")
+        available: List[str] = []
         if isinstance(models_section, dict):
-            return sorted(models_section.keys())
+            for name, info in models_section.items():
+                if isinstance(info, dict) and info.get("status") in {"ready", "available"}:
+                    available.append(name)
+            return sorted(available)
         if isinstance(self.model_registry, dict):
-            return [key for key, value in self.model_registry.items() if isinstance(value, dict)]
-        return []
+            for key, value in self.model_registry.items():
+                if isinstance(value, dict) and value.get("status") in {"ready", "available"}:
+                    available.append(key)
+        return sorted(available)
 
     def _select_default_model(self) -> Optional[str]:
         models_section = self.model_registry.get("models") if isinstance(self.model_registry, dict) else None
@@ -67,6 +73,9 @@ class ModelManager:
         info = self.get_model_info(target)
         if not info:
             return None
+        backend = info.get("backend") if isinstance(info, dict) else None
+        if backend == "torchvision":
+            return None
         path_value = info.get("model_path") or info.get("keras_model_path")
         if not isinstance(path_value, str):
             return None
@@ -74,3 +83,30 @@ class ModelManager:
         if not candidate.is_absolute():
             candidate = self.project_root / path_value
         return candidate if candidate.exists() else None
+
+    def get_console_model_specs(self) -> Dict[str, Dict[str, Any]]:
+        models_section = self.model_registry.get("models") if isinstance(self.model_registry, dict) else None
+        if not isinstance(models_section, dict):
+            return {}
+
+        configs: Dict[str, Dict[str, Any]] = {}
+        for name, info in models_section.items():
+            if not isinstance(info, dict):
+                continue
+            if info.get("status") not in {"ready", "available"}:
+                continue
+            backend = info.get("backend")
+            if backend != "torchvision":
+                continue
+
+            configs[name] = {
+                "label": info.get("label", name.replace("_", " ").title()),
+                "torchvision_constructor": info.get("torchvision_constructor", name),
+                "weights_enum": info.get("weights_enum"),
+                "input_size": int(info.get("input_size", 224)),
+                "onnx_filename": info.get("onnx_filename", f"{name}.onnx"),
+                "ensemble_default_weight": float(info.get("ensemble_default_weight", 1.0)),
+                "description": info.get("description", ""),
+            }
+
+        return configs

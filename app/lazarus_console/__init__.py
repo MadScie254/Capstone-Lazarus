@@ -24,10 +24,23 @@ import plotly.graph_objects as go
 import streamlit as st
 from PIL import Image
 
+try:  # pragma: no cover - local utilities
+    from app.lazarus_console.utils.model_manager import ModelManager
+except Exception:  # pragma: no cover
+    ModelManager = None  # type: ignore[assignment]
+
 try:  # pragma: no cover - optional dependency
     import torch
 except ImportError:  # pragma: no cover
     torch = None  # type: ignore[assignment]
+
+try:  # pragma: no cover - optional dependency
+    if torch is not None:
+        import torch.nn as nn  # type: ignore
+    else:  # pragma: no cover
+        nn = None  # type: ignore[assignment]
+except ImportError:  # pragma: no cover
+    nn = None  # type: ignore[assignment]
 
 try:  # pragma: no cover
     from torchvision import models, transforms  # type: ignore
@@ -75,6 +88,15 @@ MODEL_EXPORT_DIR = PROJECT_ROOT / "models" / "exports"
 CLASS_NAMES_PATH = PROJECT_ROOT / "models" / "class_names.json"
 MODEL_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
+MODEL_MANAGER: Optional[ModelManager] = None
+MODEL_SPECS: Dict[str, Dict[str, Any]] = {}
+if ModelManager is not None:
+    try:
+        MODEL_MANAGER = ModelManager(PROJECT_ROOT)
+        MODEL_SPECS = MODEL_MANAGER.get_console_model_specs()
+    except Exception:  # pragma: no cover - registry errors fallback to defaults
+        MODEL_SPECS = {}
+
 
 # --------------------------------------------------------------------------------------------------
 # Adaptive Theming
@@ -106,33 +128,60 @@ THEMES: Dict[str, Dict[str, str]] = {
 }
 
 
-if models is None:
-    MODEL_OPTIONS: Dict[str, Dict[str, Any]] = {}
-else:
-    assert models is not None
+def build_model_options() -> Dict[str, Dict[str, Any]]:
+    if models is None:
+        return {}
+
     tv_models = models
-    MODEL_OPTIONS = {
+
+    if MODEL_SPECS:
+        def make_builder(constructor_name: str, weight_enum_name: Optional[str]):
+            def _builder() -> Any:
+                constructor = getattr(tv_models, constructor_name)
+                weights = getattr(tv_models, weight_enum_name) if weight_enum_name else None
+                return constructor(weights=weights)
+
+            return _builder
+
+        options: Dict[str, Dict[str, Any]] = {}
+        for key, spec in MODEL_SPECS.items():
+            options[key] = {
+                "label": spec["label"],
+                "torch_builder": make_builder(spec["torchvision_constructor"], spec.get("weights_enum")),
+                "input_size": spec["input_size"],
+                "onnx_filename": spec["onnx_filename"],
+                "ensemble_default_weight": spec.get("ensemble_default_weight", 1.0),
+            }
+        return options
+
+    # Fallback to predefined defaults if registry missing/invalid
+    return {
         "efficientnet_b0": {
             "label": "EfficientNet-B0",
             "torch_builder": lambda: tv_models.efficientnet_b0(weights=tv_models.EfficientNet_B0_Weights.DEFAULT),
             "input_size": 224,
             "onnx_filename": "efficientnet_b0.onnx",
+            "ensemble_default_weight": 1.0,
         },
         "mobilenet_v3_small": {
             "label": "MobileNetV3-Small",
             "torch_builder": lambda: tv_models.mobilenet_v3_small(weights=tv_models.MobileNet_V3_Small_Weights.DEFAULT),
             "input_size": 224,
             "onnx_filename": "mobilenet_v3_small.onnx",
+            "ensemble_default_weight": 1.0,
         },
         "resnet18": {
             "label": "ResNet-18",
             "torch_builder": lambda: tv_models.resnet18(weights=tv_models.ResNet18_Weights.DEFAULT),
             "input_size": 224,
             "onnx_filename": "resnet18.onnx",
+            "ensemble_default_weight": 1.0,
         },
     }
 
-DEFAULT_ENSEMBLE_WEIGHTS = {key: 1.0 for key in MODEL_OPTIONS} if MODEL_OPTIONS else {}
+
+MODEL_OPTIONS: Dict[str, Dict[str, Any]] = build_model_options()
+DEFAULT_ENSEMBLE_WEIGHTS = {key: cfg.get("ensemble_default_weight", 1.0) for key, cfg in MODEL_OPTIONS.items()}
 
 
 def ensure_session_state() -> None:
@@ -154,6 +203,9 @@ def ensure_session_state() -> None:
     if MODEL_OPTIONS:
         if st.session_state.selected_model not in MODEL_OPTIONS:
             st.session_state.selected_model = next(iter(MODEL_OPTIONS))
+        if set(st.session_state.ensemble_weights.keys()) != set(MODEL_OPTIONS.keys()):
+            weights = DEFAULT_ENSEMBLE_WEIGHTS.copy()
+            st.session_state.ensemble_weights = weights
 
 
 def inject_theme(theme_key: str) -> None:
@@ -234,8 +286,67 @@ def load_torch_model(model_key: str) -> Optional[Module]:
         return None
     config = MODEL_OPTIONS[model_key]
     model = config["torch_builder"]()
+    model = adapt_model_head(model, model_key)
     model.eval()
     model.to(get_device())
+    return model
+
+
+def adapt_model_head(model: Module, model_key: str) -> Module:
+    if torch is None or nn is None:
+        return model
+
+    try:
+        num_classes = len(load_class_names())
+    except Exception:
+        return model
+
+    if num_classes <= 0:
+        return model
+
+    def _replace_linear(module: Any, in_features: Optional[int]) -> Optional[nn.Linear]:
+        if in_features is None:
+            return None
+        linear = nn.Linear(in_features, num_classes)
+        nn.init.xavier_uniform_(linear.weight)
+        if linear.bias is not None:
+            nn.init.zeros_(linear.bias)
+        return linear
+
+    replaced = False
+
+    classifier = getattr(model, "classifier", None)
+    if isinstance(classifier, nn.Sequential) and classifier:
+        layers = list(classifier.children())
+        last_layer = layers[-1]
+        in_features = getattr(last_layer, "in_features", None)
+        out_features = getattr(last_layer, "out_features", None)
+        if out_features != num_classes:
+            new_layer = _replace_linear(last_layer, in_features)
+            if new_layer is not None:
+                layers[-1] = new_layer
+                model.classifier = nn.Sequential(*layers)
+                replaced = True
+    elif hasattr(classifier, "out_features") and hasattr(classifier, "in_features"):
+        out_features = getattr(classifier, "out_features")
+        in_features = getattr(classifier, "in_features")
+        if out_features != num_classes:
+            new_layer = _replace_linear(classifier, in_features)
+            if new_layer is not None:
+                model.classifier = new_layer
+                replaced = True
+
+    fc = getattr(model, "fc", None)
+    if hasattr(fc, "out_features") and hasattr(fc, "in_features"):
+        if getattr(fc, "out_features") != num_classes:
+            new_fc = _replace_linear(fc, getattr(fc, "in_features", None))
+            if new_fc is not None:
+                model.fc = new_fc
+                replaced = True
+
+    if replaced:
+        st.toast(f"Retuned final layer for {MODEL_OPTIONS[model_key]['label']} to {num_classes} classes", icon="🧬")
+
     return model
 
 
@@ -739,9 +850,9 @@ def render_inference_section() -> None:
     images = [Image.open(file).convert("RGB") for file in uploaded]
     backend = "PyTorch" if st.session_state.precision_mode == "AMP" else "ONNX"
     use_amp = st.session_state.precision_mode == "AMP"
-
-    model_keys = list(MODEL_OPTIONS.keys()) if st.session_state.enable_ensemble else [st.session_state.selected_model]
+    model_keys = list(MODEL_OPTIONS.keys())
     results: List[InferenceResult] = []
+
     for model_key in model_keys:
         try:
             warmup_once(model_key, backend)
@@ -754,37 +865,38 @@ def render_inference_section() -> None:
         st.error("No inference results available.")
         return
 
-    if st.session_state.enable_ensemble and len(results) > 1:
-        result = blend_logits(results, st.session_state.ensemble_weights)
-    else:
-        result = results[0]
+    weight_template = st.session_state.ensemble_weights or DEFAULT_ENSEMBLE_WEIGHTS
+    ensemble_weights = {res.model_key: float(weight_template.get(res.model_key, 1.0)) for res in results}
+    blended = blend_logits(results, ensemble_weights) if len(results) > 1 else results[0]
 
     class_names = load_class_names()
-    probs = result.probs
-    top_indices = np.argmax(probs, axis=1)
-    confidences = np.max(probs, axis=1)
-    predictions = [class_names[idx] for idx in top_indices]
+    probs_combined = blended.probs
+    combined_top_indices = np.argmax(probs_combined, axis=1)
+    combined_confidences = np.max(probs_combined, axis=1)
+    combined_predictions = [class_names[idx] for idx in combined_top_indices]
 
-    threshold = st.session_state.confidence_threshold
-    confident_mask = confidences >= threshold
-    potential_fn = np.sum(~confident_mask)
-    potential_fp = np.sum(confident_mask) - np.sum(top_indices[confident_mask])  # heuristic placeholder
+    # Assemble batch summary with per-model contributions
+    summary_rows: List[Dict[str, Any]] = []
+    for row_idx, file_obj in enumerate(uploaded):
+        row: Dict[str, Any] = {
+            "Image": file_obj.name,
+            "Combined Prediction": combined_predictions[row_idx],
+            "Combined Confidence": combined_confidences[row_idx],
+        }
+        for res in results:
+            label = MODEL_OPTIONS[res.model_key]["label"]
+            per_probs = res.probs[row_idx]
+            per_idx = int(np.argmax(per_probs))
+            row[f"{label} Prediction"] = class_names[per_idx]
+            row[f"{label} Confidence"] = float(per_probs[per_idx])
+        summary_rows.append(row)
 
-    st.markdown("#### Batch Results")
-    data = {
-        "Image": [file.name for file in uploaded],
-        "Prediction": predictions,
-        "Confidence": confidences,
-        "Exceeds Threshold": confident_mask,
-    }
-    df_results = pd.DataFrame(data)
+    df_results = pd.DataFrame(summary_rows)
+    st.markdown("#### Combined Batch Summary")
     st.dataframe(df_results, use_container_width=True)
 
-    st.markdown(
-        f"**Potential False Negatives:** {int(potential_fn)} · **Potential False Positives:** {int(max(potential_fp,0))}"
-    )
-
-    st.metric("Per-image Latency", format_latency(result.latency_ms / len(images)))
+    avg_latency = float(np.mean([res.latency_ms for res in results]))
+    st.metric("Avg model latency", format_latency(avg_latency))
 
     if enable_csv:
         csv_bytes = df_results.to_csv(index=False).encode("utf-8")
@@ -796,19 +908,66 @@ def render_inference_section() -> None:
             use_container_width=True,
         )
 
+    st.markdown("#### Detailed Per-image Analysis")
+    threshold = st.session_state.confidence_threshold
+    for idx, (img, file_obj) in enumerate(zip(images, uploaded)):
+        exceeds_threshold = combined_confidences[idx] >= threshold
+        header = (
+            f"{file_obj.name} · {combined_predictions[idx]} ({combined_confidences[idx]:.1%})"
+            f"{' ✅' if exceeds_threshold else ' ⚠️'}"
+        )
+        with st.expander(header, expanded=len(images) == 1):
+            st.image(img, caption="Uploaded sample", use_column_width=True)
+
+            sorted_indices = np.argsort(probs_combined[idx])[::-1]
+            top_indices = sorted_indices[: min(10, len(class_names))]
+            chart_df = pd.DataFrame(
+                {
+                    "Disease": [class_names[i] for i in top_indices],
+                    "Probability": probs_combined[idx][top_indices],
+                }
+            )
+            fig = px.bar(
+                chart_df,
+                x="Disease",
+                y="Probability",
+                text=chart_df["Probability"].map(lambda p: f"{p:.1%}"),
+                title="Combined probability mass",
+            )
+            fig.update_layout(yaxis=dict(range=[0, 1]))
+            st.plotly_chart(fig, use_container_width=True)
+
+            model_rows = []
+            for res in results:
+                label = MODEL_OPTIONS[res.model_key]["label"]
+                per_probs = res.probs[idx]
+                per_idx = int(np.argmax(per_probs))
+                model_rows.append(
+                    {
+                        "Model": label,
+                        "Prediction": class_names[per_idx],
+                        "Confidence": per_probs[per_idx],
+                        "Latency (ms)": res.latency_ms / len(images),
+                    }
+                )
+            model_df = pd.DataFrame(model_rows)
+            model_df["Confidence"] = model_df["Confidence"].map(lambda v: f"{v:.1%}")
+            model_df["Latency (ms)"] = model_df["Latency (ms)"].map(lambda v: f"{v:.1f}")
+            st.dataframe(model_df, use_container_width=True)
+
     if include_gallery:
         st.markdown("#### Gallery")
         gallery_cols = st.columns(3)
         for idx, img in enumerate(images):
             with gallery_cols[idx % 3]:
-                caption = f"{predictions[idx]} ({confidences[idx]:.2f})"
+                caption = f"{combined_predictions[idx]} ({combined_confidences[idx]:.1%})"
                 st.image(img, caption=caption, use_column_width=True)
 
     st.session_state.inference_history.append(
         {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "backend": backend,
-            "model": result.model_key,
+            "models": model_keys,
             "count": len(images),
         }
     )
@@ -989,7 +1148,9 @@ def main() -> None:
     st.sidebar.write("Inference History")
     if st.session_state.inference_history:
         for entry in reversed(st.session_state.inference_history[-6:]):
-            st.sidebar.write(f"{entry['timestamp']} · {entry['model']} · {entry['backend']} · {entry['count']} imgs")
+            models_run = entry.get("models") or [entry.get("model", "-")]
+            model_label = ", ".join(models_run)
+            st.sidebar.write(f"{entry['timestamp']} · {model_label} · {entry['backend']} · {entry['count']} imgs")
     else:
         st.sidebar.info("No inferences yet.")
 

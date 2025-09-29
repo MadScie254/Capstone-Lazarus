@@ -53,10 +53,10 @@ def run_training():
 
 def run_streamlit():
     """Launch the Streamlit dashboard."""
-    print("🚀 Launching LAZARUS Dashboard...")
+    print("🚀 Launching Lazarus Console...")
     try:
         subprocess.run([
-            "streamlit", "run", "app/streamlit_app/main.py"
+            "streamlit", "run", "app/lazarus_console/__init__.py"
         ], check=True)
     except subprocess.CalledProcessError:
         print("❌ Failed to launch Streamlit app")
@@ -179,9 +179,9 @@ def main():
         print("   python run.py eda")
         print("\n🎯 Train models:")
         print("   python run.py train") 
-        print("\n🚀 Launch dashboard:")
-        print("   python run.py dashboard")
-        print("\n✨ System is ready for immersive plant disease detection!")
+    print("\n🚀 Launch Lazarus Console:")
+    print("   python run.py dashboard")
+    print("\n✨ System is ready for immersive plant disease detection!")
 
 if __name__ == "__main__":
     main()

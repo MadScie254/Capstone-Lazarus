@@ -1,5 +1,7 @@
 # 🎯 CAPSTONE-LAZARUS: Training & Streamlit Integration Fix - COMPLETE
 
+> **September 2025 Update:** The helper scripts described in this document (`fix_training_pipeline.py`, `train_complete_model.py`, `quick_train_model.py`, etc.) have been retired. The Lazarus Console now owns end-to-end inference and analysis, and model management is handled through the registry-driven utilities under `app/lazarus_console`. This note is preserved for historical context only.
+
 ## ✅ Issues Identified & Fixed
 
 ### 1. **Notebook Error (04_patch_segmentation_spatial.ipynb)**

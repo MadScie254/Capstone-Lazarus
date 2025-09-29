@@ -330,7 +330,8 @@ class SystemVerifier:
             'status': 'passed',
             'workflows_tested': [],
             'successful_workflows': [],
-            'failed_workflows': []
+            'failed_workflows': [],
+            'skipped_workflows': []
         }
         
         try:
@@ -342,8 +343,8 @@ class SystemVerifier:
                 print("✅ Training orchestrator found")
                 integration_results['successful_workflows'].append('training_orchestrator')
             else:
-                print("❌ Training orchestrator not found")
-                integration_results['failed_workflows'].append('training_orchestrator')
+                print("ℹ️ Training orchestrator retired in favour of the Lazarus Console workflow")
+                integration_results['skipped_workflows'].append('training_orchestrator')
             
             # Test inference workflow (mock)
             print("Testing inference workflow integration...")
