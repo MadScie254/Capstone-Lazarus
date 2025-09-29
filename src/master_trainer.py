@@ -15,7 +15,7 @@ import random
 import shutil
 import subprocess
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -130,11 +130,13 @@ class MasterTrainer:
         self,
         config_path: Path = Path("config.yaml"),
         models_list_path: Path = Path("config/models_list.json"),
+        data_root: Optional[Path] = None,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self.project_root = Path.cwd()
         self.config_path = config_path
         self.models_list_path = models_list_path
+        self.data_root = data_root if data_root is not None else _resolve_data_root()
         self.logger = logger or self._configure_logger()
         self.global_config = self._load_global_config()
         self.training_suite = self.global_config.get("training_suite", {})
@@ -145,8 +147,8 @@ class MasterTrainer:
 
         self.logger.debug("Loaded %d model specifications", len(self.models))
 
-        if not DATA_ROOT.exists():
-            message = "Dataset folder not found. Please place images under './Data' or './data'."
+        if not self.data_root.exists():
+            message = f"Dataset folder not found. Please place images under './Data' or './data'. (looked for: {self.data_root})"
             self.logger.error(message)
             raise FileNotFoundError(message)
 
@@ -361,6 +363,12 @@ class MasterTrainer:
             export_errors=export_errors,
         )
 
+        def _safe_relative(path: Path) -> str:
+            try:
+                return str(path.relative_to(self.project_root))
+            except ValueError:
+                return str(path)
+
         experiment_row = {
             "run_id": run_id,
             "timestamp_utc": datetime.utcnow().isoformat(),
@@ -378,10 +386,10 @@ class MasterTrainer:
             "val_accuracy": metrics["val_accuracy"],
             "val_macro_f1": metrics["val_macro_f1"],
             "val_macro_recall": metrics["val_macro_recall"],
-            "best_checkpoint_path": str(best_checkpoint_path.relative_to(self.project_root)),
-            "onnx_path": str(onnx_path.relative_to(self.project_root)) if onnx_path else "",
-            "tflite_path": str(tflite_path.relative_to(self.project_root)) if tflite_path else "",
-            "gradcam_folder": str(gradcam_folder.relative_to(self.project_root)),
+            "best_checkpoint_path": _safe_relative(best_checkpoint_path),
+            "onnx_path": _safe_relative(onnx_path) if onnx_path else "",
+            "tflite_path": _safe_relative(tflite_path) if tflite_path else "",
+            "gradcam_folder": _safe_relative(gradcam_folder),
             "notes": spec.notes or "",
         }
         self._append_experiment_row(experiment_row)
@@ -425,11 +433,15 @@ class MasterTrainer:
             dataset_size = self._count_dataset_samples()
             estimated_size = max(int(dataset_size * ratio), subset_size)
             subset_size = max(estimated_size, subset_size)
-            train_loader = create_subset_loader(str(DATA_ROOT), loader_cfg, subset_size=subset_size, split="train")
-            val_loader = create_subset_loader(str(DATA_ROOT), loader_cfg, subset_size=max(4, subset_size // 2), split="val")
+            train_loader = create_subset_loader(
+                str(self.data_root), loader_cfg, subset_size=subset_size, split="train"
+            )
+            val_loader = create_subset_loader(
+                str(self.data_root), loader_cfg, subset_size=max(4, subset_size // 2), split="val"
+            )
             return train_loader, val_loader
 
-        train_loader, val_loader = make_dataloaders(str(DATA_ROOT), loader_cfg)
+        train_loader, val_loader = make_dataloaders(str(self.data_root), loader_cfg)
         return train_loader, val_loader
 
     def _configure_phase(
@@ -645,7 +657,7 @@ class MasterTrainer:
         metadata_path = run_dir / "run_metadata.json"
         hardware = self._collect_hardware_snapshot()
         metadata = {
-            "model": spec.__dict__,
+            "model": asdict(spec),
             "metrics": metrics,
             "total_epochs": total_epochs,
             "phase_history": phase_history,
@@ -701,18 +713,18 @@ class MasterTrainer:
         raise ValueError("Unable to infer number of classes from dataset")
 
     def _infer_num_classes_from_disk(self) -> int:
-        class_dirs = [p for p in DATA_ROOT.iterdir() if p.is_dir()]
+        class_dirs = [p for p in self.data_root.iterdir() if p.is_dir()]
         return len(class_dirs)
 
     def _count_dataset_samples(self) -> int:
         try:
             from torchvision.datasets import ImageFolder
 
-            dataset = ImageFolder(str(DATA_ROOT))
+            dataset = ImageFolder(str(self.data_root))
             return len(dataset.samples)
         except Exception:  # pragma: no cover - fallback when torchvision unavailable
             total = 0
-            for cls_dir in DATA_ROOT.iterdir():
+            for cls_dir in self.data_root.iterdir():
                 if not cls_dir.is_dir():
                     continue
                 for file in cls_dir.rglob("*"):

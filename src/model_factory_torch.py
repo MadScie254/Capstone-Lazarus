@@ -219,6 +219,28 @@ def get_model(
     return model
 
 
+def create_model(config: Dict[str, Any]) -> PlantDiseaseModel:
+    """Backward-compatible helper mirroring the older training API."""
+
+    backbone = config.get("backbone") or config.get("model_name") or "tf_efficientnet_b0"
+    num_classes = config.get("num_classes", 19)
+    dropout_rate = config.get("dropout_rate", 0.3)
+    pretrained = config.get("pretrained", True)
+    use_quantum = config.get("use_quantum", False)
+    quantum_cfg = config.get("quantum")
+    extra_kwargs = config.get("model_kwargs", {})
+
+    return get_model(
+        backbone=backbone,
+        num_classes=num_classes,
+        pretrained=pretrained,
+        use_quantum=use_quantum,
+        quantum_config=quantum_cfg,
+        dropout_rate=dropout_rate,
+        **extra_kwargs,
+    )
+
+
 def get_model_size_mb(model: nn.Module) -> float:
     """Calculate model size in MB."""
     param_size = 0

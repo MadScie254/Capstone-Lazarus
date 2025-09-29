@@ -13,6 +13,7 @@ import os
 import sys
 import textwrap
 import time
+from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, cast
@@ -86,6 +87,7 @@ PROJECT_ROOT = get_project_root()
 DATA_DIR = PROJECT_ROOT / "data"
 MODEL_EXPORT_DIR = PROJECT_ROOT / "models" / "exports"
 CLASS_NAMES_PATH = PROJECT_ROOT / "models" / "class_names.json"
+EXPERIMENTS_INDEX_PATH = PROJECT_ROOT / "experiments.csv"
 MODEL_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_MANAGER: Optional[ModelManager] = None
@@ -565,6 +567,149 @@ def build_dataset_manifest(sample_per_class: int = 12) -> DatasetManifest:
     return DatasetManifest(frame=frame, sample_paths=sample_paths)
 
 
+@st.cache_data(show_spinner=False)
+def load_experiments_index(limit: int = 6) -> pd.DataFrame:
+    if not EXPERIMENTS_INDEX_PATH.exists():
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(EXPERIMENTS_INDEX_PATH)
+    except Exception:
+        return pd.DataFrame()
+
+    if df.empty:
+        return df
+
+    df["timestamp_utc"] = pd.to_datetime(df.get("timestamp_utc"), errors="coerce")
+    numeric_cols = [
+        "val_macro_f1",
+        "val_macro_recall",
+        "val_accuracy",
+        "params_count",
+        "batch_size",
+    ]
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.sort_values("timestamp_utc", ascending=False)
+    if limit:
+        df = df.head(limit)
+    return df.reset_index(drop=True)
+
+
+def _format_timestamp(value: Any) -> str:
+    if isinstance(value, pd.Timestamp):
+        ts = value.tz_localize(None) if value.tzinfo else value
+        return ts.strftime("%Y-%m-%d %H:%M")
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return parsed.strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            return value
+    return "—"
+
+
+def build_home_metrics() -> Dict[str, Any]:
+    class_names = load_class_names()
+    fallback = {
+        "macro_f1": float("nan"),
+        "per_class_recall": np.array([]),
+        "latency": float("nan"),
+        "model_size": "—",
+        "checkpoints": [],
+        "latest_run": None,
+    }
+
+    def _safe_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            try:
+                if math.isnan(value):
+                    return None
+            except TypeError:
+                return None
+            return float(value)
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if not trimmed:
+                return None
+            try:
+                cast_value = float(trimmed)
+            except ValueError:
+                return None
+            return cast_value if not math.isnan(cast_value) else None
+        if pd.isna(value):  # type: ignore[arg-type]
+            return None
+        try:
+            cast_value = float(value)
+            return cast_value if not math.isnan(cast_value) else None
+        except (TypeError, ValueError):
+            return None
+
+    df = load_experiments_index(limit=6)
+    if df.empty:
+        return fallback
+
+    latest = df.iloc[0]
+    macro_f1 = _safe_float(latest.get("val_macro_f1"))
+    macro_recall = _safe_float(latest.get("val_macro_recall"))
+    if macro_recall is not None and class_names:
+        per_class_recall = np.full(len(class_names), macro_recall)
+    elif macro_recall is not None:
+        per_class_recall = np.array([macro_recall])
+    else:
+        per_class_recall = np.array([])
+
+    params_count = _safe_float(latest.get("params_count"))
+    if params_count is not None:
+        approx_mb = params_count * 4 / (1024 ** 2)
+        model_size = f"~{approx_mb:.1f} MB"
+    else:
+        model_size = "—"
+
+    latency_value = _safe_float(latest.get("latency_ms")) or float("nan")
+
+    checkpoints: List[Dict[str, Any]] = []
+    for _, row in df.iterrows():
+        f1_value = _safe_float(row.get("val_macro_f1"))
+        f1_metric = f"F1 {f1_value:.3f}" if f1_value is not None else "F1 —"
+        acc_value = _safe_float(row.get("val_accuracy"))
+        acc_metric = f"Acc {acc_value:.3f}" if acc_value is not None else None
+        notes = (row.get("notes") or "").strip()
+        checkpoints.append(
+            {
+                "timestamp": _format_timestamp(row.get("timestamp_utc")),
+                "model": row.get("model_name", "—"),
+                "metric": f1_metric,
+                "secondary": acc_metric,
+                "notes": notes,
+                "run_id": row.get("run_id"),
+            }
+        )
+
+    latest_run = {
+        "run_id": latest.get("run_id"),
+        "timestamp": _format_timestamp(latest.get("timestamp_utc")),
+        "model_name": latest.get("model_name"),
+        "backbone": latest.get("backbone"),
+        "val_accuracy": _safe_float(latest.get("val_accuracy")),
+        "val_macro_f1": macro_f1,
+        "notes": (latest.get("notes") or "").strip(),
+    }
+
+    return {
+        "macro_f1": macro_f1 if macro_f1 is not None else float("nan"),
+        "per_class_recall": per_class_recall,
+        "latency": latency_value,
+        "model_size": model_size,
+        "checkpoints": checkpoints,
+        "latest_run": latest_run,
+    }
+
+
 @st.cache_data(show_spinner=True)
 def cached_model_metrics(model_key: str, backend: str, threshold: float) -> Dict[str, Any]:
     if f1_score is None or recall_score is None or confusion_matrix is None or precision_recall_curve is None:
@@ -787,15 +932,55 @@ def render_home_section(metrics_cache: Dict[str, Any]) -> None:
     render_section_divider()
     st.subheader("Mission Readiness Dashboard")
 
+    latest_run = metrics_cache.get("latest_run") or {}
+
+    def _fmt_metric(value: Optional[float], precision: int = 3) -> str:
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            return "—"
+        return f"{value:.{precision}f}"
+
+    per_class_recall = metrics_cache.get("per_class_recall", np.array([]))
+    if isinstance(per_class_recall, list):
+        per_class_recall = np.array(per_class_recall)
+    best_recall = np.nanmax(per_class_recall) if getattr(per_class_recall, "size", 0) else float("nan")
+
+    latency_value = metrics_cache.get("latency")
+    latency_display = "—"
+    if isinstance(latency_value, (int, float)) and not math.isnan(latency_value):
+        latency_display = format_latency(float(latency_value))
+
     metric_cols = st.columns(4)
-    render_metric_card("Macro F1", f"{metrics_cache['macro_f1']:.3f}")
-    render_metric_card(
-        "Critical Recall",
-        f"{np.max(metrics_cache['per_class_recall']):.3f}",
-        delta="Highest per-class recall",
-    )
-    render_metric_card("Latency", f"{metrics_cache['latency']:.1f} ms", delta="batch=8 warm fwd")
-    render_metric_card("Model Size", metrics_cache["model_size"], delta="PyTorch fp32")
+    with metric_cols[0]:
+        render_metric_card("Macro F1", _fmt_metric(metrics_cache.get("macro_f1")))
+    with metric_cols[1]:
+        render_metric_card(
+            "Critical Recall",
+            _fmt_metric(best_recall),
+            delta="Highest per-class recall",
+        )
+    with metric_cols[2]:
+        render_metric_card("Latency", latency_display, delta="batch=8 warm fwd")
+    with metric_cols[3]:
+        render_metric_card("Model Size", metrics_cache.get("model_size", "—"), delta="Parameter footprint")
+
+    if latest_run:
+        summary_parts = []
+        macro_val = latest_run.get("val_macro_f1")
+        acc_val = latest_run.get("val_accuracy")
+        if macro_val is not None:
+            summary_parts.append(f"F1 {macro_val:.3f}")
+        if acc_val is not None:
+            summary_parts.append(f"Acc {acc_val:.3f}")
+        tag_line = " · ".join(summary_parts) if summary_parts else "Metrics pending"
+        notes = latest_run.get("notes")
+        summary_line = (
+            f"**Latest Run · {latest_run.get('timestamp', '—')}** — "
+            f"{latest_run.get('model_name', '—')} ({latest_run.get('backbone', 'n/a')})"
+        )
+        st.markdown(summary_line)
+        st.caption(tag_line)
+        if notes:
+            st.caption(f"Notes: {notes}")
 
     col1, col2 = st.columns([1.4, 1.6])
     with col1:
@@ -803,9 +988,12 @@ def render_home_section(metrics_cache: Dict[str, Any]) -> None:
         checkpoints = metrics_cache.get("checkpoints", [])
         if checkpoints:
             for ckpt in checkpoints:
-                st.markdown(
-                    f"- **{ckpt['timestamp']}** · {ckpt['model']} → {ckpt['metric']}"
-                )
+                line = f"- **{ckpt['timestamp']}** · {ckpt['model']} → {ckpt['metric']}"
+                if ckpt.get("secondary"):
+                    line += f" · {ckpt['secondary']}"
+                st.markdown(line)
+                if ckpt.get("notes"):
+                    st.caption(f"{ckpt['notes']}")
         else:
             st.info("No checkpoints recorded yet. Run training to populate this feed.")
     with col2:
@@ -1158,16 +1346,7 @@ def main() -> None:
     if not MODEL_OPTIONS:
         st.stop()
 
-    metrics_cache = {
-        "macro_f1": 0.932,
-        "per_class_recall": np.random.uniform(0.85, 0.98, size=len(load_class_names())),
-        "latency": 72.5,
-        "model_size": "~45 MB",
-        "checkpoints": [
-            {"timestamp": "2025-09-20 11:04", "model": "EfficientNet-B0", "metric": "F1 0.93"},
-            {"timestamp": "2025-09-18 07:42", "model": "MobileNetV3-Small", "metric": "Latency 48 ms"},
-        ],
-    }
+    metrics_cache = build_home_metrics()
     render_home_section(metrics_cache)
 
     render_inference_section()
