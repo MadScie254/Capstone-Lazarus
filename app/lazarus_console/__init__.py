@@ -359,7 +359,6 @@ def run_single_backend_inference(
     device = get_device()
 
     tensors = [transform(img).unsqueeze(0) for img in images]
-    batch = torch.cat(tensors, dim=0)
     logits_list: List[np.ndarray] = []
     start = time.perf_counter()
 
@@ -370,7 +369,7 @@ def run_single_backend_inference(
         model.to(device)
         model.eval()
         with torch.no_grad():
-            for sub_batch in chunked(batch, 8):
+            for sub_batch in chunked(tensors, 8):
                 sub_tensor = torch.cat(sub_batch, dim=0).to(device)
                 with torch.autocast(device_type=device.type, enabled=use_amp and device.type == "cuda"):
                     outputs = model(sub_tensor)
@@ -379,7 +378,7 @@ def run_single_backend_inference(
         session = load_onnx_session(model_key)
         if session is None:
             raise RuntimeError("ONNX session not available")
-        for sub_batch in chunked(batch, 8):
+        for sub_batch in chunked(tensors, 8):
             sub_tensor = torch.cat(sub_batch, dim=0).numpy()
             ort_inputs = {session.get_inputs()[0].name: sub_tensor}
             logits = session.run(None, ort_inputs)[0]
