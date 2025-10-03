@@ -16,7 +16,7 @@ import shutil
 import subprocess
 from copy import deepcopy
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -371,7 +371,7 @@ class MasterTrainer:
 
         experiment_row = {
             "run_id": run_id,
-            "timestamp_utc": datetime.utcnow().isoformat(),
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "commit_hash": commit_hash,
             "model_name": spec.name,
             "backbone": spec.backbone,
@@ -689,7 +689,7 @@ class MasterTrainer:
         temp_path.replace(EXPERIMENTS_INDEX)
 
     def _build_run_id(self, model_name: str) -> str:
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         commit_short = self._current_commit_hash()[:7]
         safe_name = model_name.replace(" ", "_")
         return f"{timestamp}_{safe_name}_{commit_short}"

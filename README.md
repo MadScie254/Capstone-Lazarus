@@ -103,15 +103,101 @@ python tests/test_data_utils.py
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Explore data
+# 2. Validate environment
+python scripts/validate_environment.py
+
+# 3. Explore data
 jupyter notebook notebooks/eda_plant_diseases.ipynb
 
-# 3. Train models  
-jupyter notebook notebooks/model_training.ipynb
+# 4. Train models (see Local Training & Dashboard below)
+jupyter notebook notebooks/master_model_trainer.ipynb
 
-# 4. Launch dashboard
-streamlit run app/streamlit_app.py
+# 5. Launch dashboard
+streamlit run app/lazarus_console/__init__.py
 ```
+
+---
+
+## 🎓 Local Training & Dashboard
+
+### Training Models
+
+**Option 1: Jupyter Notebook (Recommended)**
+
+```bash
+# Full training run
+jupyter notebook notebooks/master_model_trainer.ipynb
+
+# Or convert and execute directly
+jupyter nbconvert --execute notebooks/master_model_trainer.ipynb
+```
+
+**Option 2: Python CLI**
+
+```bash
+# Fast smoke test (1 epoch, small sample)
+python -m src.master_trainer --fast-test
+
+# Full training from config
+python -m src.master_trainer --config config.yaml
+```
+
+**For Low-Spec Machines (HP ZBook 15 G5, 16GB RAM):**
+
+Recommended settings in notebook or `config.yaml`:
+- `batch_size: 2-4` (instead of 8)
+- `image_size: 160` (instead of 224)  
+- `fast_test: true` for initial runs
+- Train one model at a time
+
+### Launching the Dashboard
+
+```bash
+# Primary method
+streamlit run app/lazarus_console/__init__.py
+
+# Or use convenience wrapper
+python run.py
+```
+
+**Dashboard Features:**
+- 🏠 **Mission Readiness**: Latest metrics, checkpoints feed
+- 🔬 **Inference Lab**: Batch upload, ensemble mode, confidence thresholds
+- 🧬 **Explainability Studio**: Grad-CAM with opacity control
+- 📊 **Model Comparison**: Side-by-side metrics, confusion matrices
+
+### Running Tests
+
+```bash
+# Smoke test suite (PowerShell on Windows)
+.\run_smoke_tests.ps1
+
+# Or Bash (Linux/macOS/Git Bash)
+./run_smoke_tests.sh
+
+# Individual test files
+pytest tests/test_smoke_train.py -v
+pytest tests/test_streamlit_integration.py -v
+pytest tests/test_master_trainer.py -v
+```
+
+### Profiling Inference
+
+```bash
+# CPU profiling
+python scripts/profile_inference.py \
+  --model models/{run_id}/best.pth \
+  --device cpu \
+  --runs 100
+
+# GPU profiling (if CUDA available)
+python scripts/profile_inference.py \
+  --model models/{run_id}/best.pth \
+  --device cuda \
+  --batch-size 8
+```
+
+**For detailed troubleshooting, see [`docs/runbook.md`](docs/runbook.md).**
 
 ---
 
