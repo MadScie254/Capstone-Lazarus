@@ -134,9 +134,9 @@ class MasterTrainer:
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self.project_root = Path.cwd()
-        self.config_path = config_path
-        self.models_list_path = models_list_path
-        self.data_root = data_root if data_root is not None else _resolve_data_root()
+        self.config_path = Path(config_path) if not isinstance(config_path, Path) else config_path
+        self.models_list_path = Path(models_list_path) if not isinstance(models_list_path, Path) else models_list_path
+        self.data_root = Path(data_root) if data_root is not None and not isinstance(data_root, Path) else (data_root if data_root is not None else _resolve_data_root())
         self.logger = logger or self._configure_logger()
         self.global_config = self._load_global_config()
         self.training_suite = self.global_config.get("training_suite", {})

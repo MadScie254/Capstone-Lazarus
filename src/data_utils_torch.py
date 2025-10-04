@@ -230,13 +230,24 @@ def get_torchvision_transforms(
     return transforms.Compose(transform_list)
 
 
-def create_weighted_sampler(dataset: PlantDiseaseDataset) -> WeightedRandomSampler:
+def create_weighted_sampler(dataset) -> WeightedRandomSampler:
     """
     Create weighted sampler for class balancing.
+    Handles both full datasets and Subset objects.
     """
+    from torch.utils.data import Subset
     
-    # Get class counts
-    labels = [sample[1] for sample in dataset.samples]
+    # Get class counts - handle Subset vs full dataset
+    if isinstance(dataset, Subset):
+        # For Subset, access the underlying dataset
+        labels = [dataset.dataset.samples[idx][1] for idx in dataset.indices]
+    elif hasattr(dataset, 'samples'):
+        # For ImageFolder or PlantDiseaseDataset
+        labels = [sample[1] for sample in dataset.samples]
+    else:
+        # Fallback: iterate through dataset
+        labels = [dataset[i][1] for i in range(len(dataset))]
+    
     class_counts = np.bincount(labels)
     
     # Calculate weights (inverse frequency)

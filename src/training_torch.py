@@ -186,6 +186,9 @@ class Trainer:
             self.scaler = GradScaler()
             logger.info("Using Automatic Mixed Precision (AMP)")
         
+        # Gradient accumulation (MUST be set before scheduler)
+        self.accumulation_steps = config.get('accumulation_steps', 1)
+        
         # Optimizer setup
         self.optimizer = self._create_optimizer()
         
@@ -200,9 +203,6 @@ class Trainer:
         
         # Loss function
         self.criterion = self._create_loss_function()
-        
-        # Gradient accumulation
-        self.accumulation_steps = config.get('accumulation_steps', 1)
         
         # Metrics tracking
         self.train_metrics = MetricsTracker()
