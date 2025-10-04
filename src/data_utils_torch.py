@@ -23,6 +23,8 @@ try:
     ALBUMENTATIONS_AVAILABLE = True
 except ImportError:
     ALBUMENTATIONS_AVAILABLE = False
+    A = None  # Define A as None when not available
+    ToTensorV2 = None
     logger.warning("Albumentations not available, using torchvision transforms")
 
 
@@ -80,7 +82,7 @@ def get_albumentations_transforms(
     image_size: int = 224,
     split: str = "train",
     strength: str = "medium"
-) -> A.Compose:
+) -> Any:
     """
     Get Albumentations transforms for different training phases.
     
@@ -88,6 +90,9 @@ def get_albumentations_transforms(
         image_size: Target image size
         split: 'train', 'val', or 'test'
         strength: 'light', 'medium', 'heavy' augmentation strength
+    
+    Returns:
+        Albumentations Compose object
     """
     
     if not ALBUMENTATIONS_AVAILABLE:
