@@ -186,6 +186,18 @@ MODEL_OPTIONS: Dict[str, Dict[str, Any]] = build_model_options()
 DEFAULT_ENSEMBLE_WEIGHTS = {key: cfg.get("ensemble_default_weight", 1.0) for key, cfg in MODEL_OPTIONS.items()}
 
 
+def _format_timestamp(ts) -> str:
+    """Format timestamp for display."""
+    if pd.isna(ts):
+        return "Unknown"
+    if isinstance(ts, str):
+        try:
+            ts = pd.to_datetime(ts)
+        except:
+            return ts
+    return ts.strftime("%Y-%m-%d %H:%M")
+
+
 def ensure_session_state() -> None:
     defaults = {
         "theme": "dark",
@@ -281,16 +293,93 @@ def get_device() -> Any:
     return torch.device("cpu")
 
 
+def get_best_checkpoint_for_model(model_key: str) -> Optional[Path]:
+    """Find the best checkpoint for a model from experiments.csv."""
+    if not EXPERIMENTS_INDEX_PATH.exists():
+        return None
+    
+    try:
+        import pandas as pd
+        df = pd.read_csv(EXPERIMENTS_INDEX_PATH)
+        
+        # Filter for this model (match by name or backbone)
+        model_runs = df[
+            (df["model_name"].str.contains(model_key, case=False, na=False)) |
+            (df["backbone"].str.contains(model_key, case=False, na=False))
+        ]
+        
+        if model_runs.empty:
+            return None
+        
+        # Sort by F1 score, get best
+        model_runs = model_runs.sort_values("val_macro_f1", ascending=False)
+        best_run = model_runs.iloc[0]
+        
+        checkpoint_path_str = best_run.get("best_checkpoint_path")
+        if pd.isna(checkpoint_path_str) or not checkpoint_path_str:
+            return None
+        
+        checkpoint_path = PROJECT_ROOT / checkpoint_path_str
+        if checkpoint_path.exists():
+            return checkpoint_path
+        
+        return None
+    except Exception as e:
+        print(f"Error loading checkpoint for {model_key}: {e}")
+        return None
+
+
 @st.cache_resource(show_spinner=False)
-def load_torch_model(model_key: str) -> Optional[Module]:
+def load_torch_model(model_key: str, use_trained: bool = True) -> Optional[Module]:
+    """Load PyTorch model, preferring trained checkpoints from experiments.csv."""
     if torch is None or models is None:
         st.toast("PyTorch not available - install torch and torchvision.", icon="⚠️")
         return None
+    
     config = MODEL_OPTIONS[model_key]
+    num_classes = len(load_class_names())
+    
+    # Try to load trained checkpoint first
+    checkpoint_path = None
+    if use_trained:
+        checkpoint_path = get_best_checkpoint_for_model(model_key)
+    
+    if checkpoint_path and checkpoint_path.exists():
+        # Load trained model using src infrastructure
+        try:
+            from src.model_factory_torch import get_model
+            
+            # Infer backbone name from model_key
+            backbone = model_key.replace("_", "")  # efficientnet_b0 -> efficientnetb0
+            
+            model = get_model(
+                backbone=model_key,
+                num_classes=num_classes,
+                pretrained=False,
+                dropout_rate=0.3
+            )
+            
+            # Load trained weights
+            state_dict = torch.load(checkpoint_path, map_location=get_device())
+            model.load_state_dict(state_dict)
+            model.eval()
+            model.to(get_device())
+            
+            st.toast(f"✓ Loaded trained {MODEL_OPTIONS[model_key]['label']} from checkpoint", icon="🎯")
+            return model
+            
+        except Exception as e:
+            st.warning(f"Failed to load trained checkpoint: {e}. Falling back to pretrained ImageNet weights.")
+    
+    # Fallback: load pretrained ImageNet model
     model = config["torch_builder"]()
     model = adapt_model_head(model, model_key)
     model.eval()
     model.to(get_device())
+    
+    if not checkpoint_path:
+        st.info(f"No trained checkpoint found for {model_key}. Using ImageNet pretrained weights. Train a model first!")
+    
     return model
 
 
@@ -500,6 +589,33 @@ def run_single_backend_inference(
     logits = np.concatenate(logits_list, axis=0)
     latency_ms = (time.perf_counter() - start) * 1000
     probs = softmax(logits)
+    
+    # Log inference telemetry
+    try:
+        from src.telemetry import log_inference
+        
+        for idx, (prob_vec, img) in enumerate(zip(probs, images)):
+            top1_idx = int(np.argmax(prob_vec))
+            top1_label = labels[top1_idx]
+            top1_conf = float(prob_vec[top1_idx])
+            
+            # Try to get run_id from checkpoint
+            run_id = None
+            checkpoint_path = get_best_checkpoint_for_model(model_key)
+            if checkpoint_path:
+                run_id = checkpoint_path.parent.name
+            
+            log_inference(
+                run_id=run_id,
+                model_path=f"console/{model_key}/{backend}",
+                image_name=f"upload_{idx}",
+                top1_label=top1_label,
+                top1_confidence=top1_conf,
+                latency_ms=latency_ms / len(images),  # Per-image latency
+            )
+    except Exception as e:
+        # Telemetry is non-critical, don't break inference
+        print(f"Telemetry logging failed: {e}")
 
     return InferenceResult(
         image=images[0] if len(images) == 1 else images[0],
@@ -580,7 +696,8 @@ def load_experiments_index(limit: int = 6) -> pd.DataFrame:
     if df.empty:
         return df
 
-    df["timestamp_utc"] = pd.to_datetime(df.get("timestamp_utc"), errors="coerce")
+    if "timestamp_utc" in df.columns:
+        df["timestamp_utc"] = pd.to_datetime(df["timestamp_utc"], errors="coerce")
     numeric_cols = [
         "val_macro_f1",
         "val_macro_recall",
@@ -591,6 +708,7 @@ def load_experiments_index(limit: int = 6) -> pd.DataFrame:
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+
 
     df = df.sort_values("timestamp_utc", ascending=False)
     if limit:
@@ -1011,6 +1129,158 @@ def render_home_section(metrics_cache: Dict[str, Any]) -> None:
 
 
 # --------------------------------------------------------------------------------------------------
+# Model Hub Section
+# --------------------------------------------------------------------------------------------------
+
+
+def render_model_hub_section() -> None:
+    """Display trained models from experiments.csv with download links and metrics."""
+    render_section_divider()
+    st.subheader("🎯 Model Hub - Trained Checkpoints")
+    st.caption("Browse all trained models, view metrics, download artifacts, and load for inference")
+    
+    if not EXPERIMENTS_INDEX_PATH.exists():
+        st.warning("No experiments.csv found. Train your first model to populate the hub!")
+        st.markdown("""
+        **To train a model:**
+        1. Open `notebooks/master_model_trainer.ipynb`
+        2. Set `fast_test_mode = True` for a quick run
+        3. Execute the notebook cells
+        4. Return here to see your trained models
+        """)
+        return
+    
+    try:
+        df = pd.read_csv(EXPERIMENTS_INDEX_PATH)
+    except Exception as e:
+        st.error(f"Failed to load experiments.csv: {e}")
+        return
+    
+    if df.empty:
+        st.info("No training runs recorded yet. Train your first model!")
+        return
+    
+    # Sort by timestamp (most recent first)
+    df["timestamp_utc"] = pd.to_datetime(df["timestamp_utc"], errors="coerce")
+    df = df.sort_values("timestamp_utc", ascending=False)
+    
+    # Filters
+    filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 1])
+    with filter_col1:
+        model_filter = st.multiselect(
+            "Filter by Model",
+            options=sorted(df["model_name"].dropna().unique()),
+            default=None
+        )
+    with filter_col2:
+        framework_filter = st.multiselect(
+            "Filter by Framework",
+            options=sorted(df["framework"].dropna().unique()),
+            default=None
+        )
+    with filter_col3:
+        min_f1 = st.slider("Minimum F1 Score", 0.0, 1.0, 0.0, 0.05)
+    
+    # Apply filters
+    filtered = df.copy()
+    if model_filter:
+        filtered = filtered[filtered["model_name"].isin(model_filter)]
+    if framework_filter:
+        filtered = filtered[filtered["framework"].isin(framework_filter)]
+    filtered = filtered[filtered["val_macro_f1"].fillna(0) >= min_f1]
+    
+    st.markdown(f"**Showing {len(filtered)} of {len(df)} runs**")
+    
+    # Display runs
+    for idx, row in filtered.iterrows():
+        with st.expander(
+            f"🔹 {row['model_name']} ({row['backbone']}) - F1 {row.get('val_macro_f1', 0):.3f} - {_format_timestamp(row['timestamp_utc'])}",
+            expanded=False
+        ):
+            metrics_col, artifacts_col = st.columns([1.2, 1.0])
+            
+            with metrics_col:
+                st.markdown("#### Metrics")
+                met_cols = st.columns(3)
+                met_cols[0].metric("Accuracy", f"{row.get('val_accuracy', 0):.3f}")
+                met_cols[1].metric("F1 Score", f"{row.get('val_macro_f1', 0):.3f}")
+                met_cols[2].metric("Recall", f"{row.get('val_macro_recall', 0):.3f}")
+                
+                info_cols = st.columns(2)
+                info_cols[0].metric("Epochs", int(row.get("epochs_trained", 0)))
+                info_cols[1].metric("Batch Size", int(row.get("batch_size", 0)))
+                
+                st.markdown(f"**Run ID:** `{row['run_id']}`")
+                st.markdown(f"**Framework:** {row.get('framework', 'unknown')}")
+                st.markdown(f"**Input Size:** {row.get('input_size', 0)}×{row.get('input_size', 0)}")
+                st.markdown(f"**Parameters:** {int(row.get('params_count', 0)):,}")
+                
+                notes = row.get("notes")
+                if notes and str(notes).strip():
+                    st.markdown(f"**Notes:** {notes}")
+            
+            with artifacts_col:
+                st.markdown("#### Artifacts")
+                
+                # PyTorch checkpoint
+                checkpoint_path = row.get("best_checkpoint_path")
+                if checkpoint_path and pd.notna(checkpoint_path):
+                    full_path = PROJECT_ROOT / checkpoint_path
+                    if full_path.exists():
+                        st.markdown(f"✅ PyTorch: `{checkpoint_path}`")
+                        if st.button(f"Load for Inference", key=f"load_{idx}"):
+                            st.session_state.selected_checkpoint = str(full_path)
+                            st.success(f"✓ Loaded {row['model_name']} for inference")
+                    else:
+                        st.markdown(f"⚠️ PyTorch: Not found")
+                
+                # ONNX export
+                onnx_path = row.get("onnx_path")
+                if onnx_path and pd.notna(onnx_path) and str(onnx_path).strip():
+                    full_onnx = PROJECT_ROOT / onnx_path
+                    if full_onnx.exists():
+                        st.markdown(f"✅ ONNX: `{onnx_path}`")
+                    else:
+                        st.markdown(f"⚠️ ONNX: Export failed")
+                else:
+                    st.markdown("➖ ONNX: Not exported")
+                
+                # TFLite export
+                tflite_path = row.get("tflite_path")
+                if tflite_path and pd.notna(tflite_path) and str(tflite_path).strip():
+                    full_tflite = PROJECT_ROOT / tflite_path
+                    if full_tflite.exists():
+                        st.markdown(f"✅ TFLite: `{tflite_path}`")
+                    else:
+                        st.markdown(f"⚠️ TFLite: Export failed")
+                else:
+                    st.markdown("➖ TFLite: Not exported")
+                
+                # Grad-CAM gallery
+                gradcam_folder = row.get("gradcam_folder")
+                if gradcam_folder and pd.notna(gradcam_folder):
+                    full_gradcam = PROJECT_ROOT / gradcam_folder
+                    if full_gradcam.exists():
+                        gradcam_images = list(full_gradcam.glob("*.png"))
+                        st.markdown(f"✅ Grad-CAM: {len(gradcam_images)} images")
+                        if st.button(f"View Gallery", key=f"gradcam_{idx}"):
+                            st.session_state.gradcam_gallery = gradcam_images[:6]
+                    else:
+                        st.markdown("⚠️ Grad-CAM: Not found")
+    
+    # Show Grad-CAM gallery if selected
+    if "gradcam_gallery" in st.session_state and st.session_state.gradcam_gallery:
+        st.markdown("---")
+        st.markdown("### Grad-CAM Gallery")
+        cols = st.columns(3)
+        for idx, img_path in enumerate(st.session_state.gradcam_gallery):
+            with cols[idx % 3]:
+                st.image(str(img_path), caption=img_path.name, use_container_width=True)
+        if st.button("Close Gallery"):
+            del st.session_state.gradcam_gallery
+
+
+# --------------------------------------------------------------------------------------------------
 # Inference Section
 # --------------------------------------------------------------------------------------------------
 
@@ -1326,6 +1596,14 @@ def main() -> None:
     ensure_session_state()
     inject_theme(st.session_state.theme)
 
+    st.sidebar.title("🧭 Navigation")
+    section = st.sidebar.radio(
+        "Go to section:",
+        ["Home", "Model Hub", "Inference Lab", "Explainability", "Model Comparison"],
+        index=0
+    )
+    
+    st.sidebar.markdown("---")
     st.sidebar.title("Notebook-style Insights")
     st.sidebar.write("""
     - 🛰️ Ensemble toggles enable consensus for high-stakes deployments.
@@ -1346,12 +1624,19 @@ def main() -> None:
     if not MODEL_OPTIONS:
         st.stop()
 
-    metrics_cache = build_home_metrics()
-    render_home_section(metrics_cache)
-
-    render_inference_section()
-    render_explainability_section()
-    render_compare_section()
+    # Render selected section
+    if section == "Home":
+        metrics_cache = build_home_metrics()
+        render_home_section(metrics_cache)
+    elif section == "Model Hub":
+        render_model_hub_section()
+    elif section == "Inference Lab":
+        render_inference_section()
+    elif section == "Explainability":
+        render_explainability_section()
+    elif section == "Model Comparison":
+        render_compare_section()
+    
     render_footer()
 
 

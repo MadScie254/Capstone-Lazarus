@@ -1,0 +1,4 @@
+timestamp,run_id,model_path,image_name,top1_label,top1_confidence,latency_ms
+2025-10-03T23:45:38.562485+00:00,test_run,test_model.pth,test.jpg,test_class,0.9500,50.00
+2025-10-03T23:46:15.443208+00:00,test_run,test_model.pth,test.jpg,test_class,0.9500,50.00
+2025-10-03T23:54:36.392998+00:00,test_run,test_model.pth,test.jpg,test_class,0.9500,50.00
