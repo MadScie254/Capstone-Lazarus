@@ -252,15 +252,15 @@ class MasterTrainer:
         print(f"🚨 NUCLEAR LOADER CONFIG: {loader_cfg}")
         train_loader, val_loader = make_dataloaders(str(self.data_root), loader_cfg)
 
-        # NUCLEAR OPTION: FORCE OFFLINE MODEL CREATION
-        print(f"🚨 Creating {spec.backbone} in FORCE OFFLINE mode")
+        # SMART COMPROMISE: Try pretrained, fallback to offline
+        print(f"🎯 Creating {spec.backbone} with smart fallback...")
         model = get_model(
             backbone=spec.backbone,
             num_classes=self._infer_num_classes(train_loader),
-            pretrained=False,  # NEVER DOWNLOAD - FORCE OFFLINE ALWAYS
+            pretrained=True,  # Try pretrained first
             dropout_rate=self.global_config.get("dropout_rate", 0.3),
         )
-        self.logger.info(f"✓ Model created OFFLINE: {spec.backbone}")
+        self.logger.info(f"✓ Model created: {spec.backbone}")
 
         best_state = deepcopy(model.state_dict())
         best_metrics = {"val_accuracy": 0.0, "val_macro_f1": 0.0, "val_macro_recall": 0.0}

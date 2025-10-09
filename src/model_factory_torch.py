@@ -46,21 +46,45 @@ class PlantDiseaseModel(nn.Module):
         self.num_classes = num_classes
         self.use_quantum = use_quantum
         
-        # NUCLEAR OPTION: FORCE OFFLINE MODE - NO NETWORK CALLS EVER
+        # SMART COMPROMISE: Try pretrained first, fallback to offline
         if backbone not in BACKBONE_MAP:
             raise ValueError(f"Backbone '{backbone}' not supported. Choose from {list(BACKBONE_MAP.keys())}")
             
         model_name = BACKBONE_MAP[backbone]
         
-        # EMERGENCY: ALWAYS USE OFFLINE MODE TO AVOID 8-HOUR TIMEOUTS
-        print(f"🚨 FORCE OFFLINE MODE: Creating {model_name} without pretrained weights")
-        self.backbone = timm.create_model(
-            model_name, 
-            pretrained=False,  # NEVER DOWNLOAD - FORCE OFFLINE
-            num_classes=0,  # Remove classifier head
-            global_pool='',  # Remove global pooling
-        )
-        print(f"✓ Created {model_name} from scratch (OFFLINE MODE)")
+        # SMART: Try pretrained with 30-second timeout
+        if pretrained:
+            try:
+                print(f"🎯 Attempting pretrained {model_name} (30s timeout)...")
+                import socket
+                socket.setdefaulttimeout(30)  # 30-second timeout
+                
+                self.backbone = timm.create_model(
+                    model_name, 
+                    pretrained=True,
+                    num_classes=0,  # Remove classifier head
+                    global_pool='',  # Remove global pooling
+                )
+                print(f"✓ SUCCESS: Loaded {model_name} with pretrained weights")
+                
+            except Exception as e:
+                print(f"⚠️ Pretrained failed ({e}), using offline mode...")
+                self.backbone = timm.create_model(
+                    model_name, 
+                    pretrained=False,  # Fallback to offline
+                    num_classes=0,  # Remove classifier head
+                    global_pool='',  # Remove global pooling
+                )
+                print(f"✓ Created {model_name} from scratch (offline mode)")
+        else:
+            print(f"🚨 Creating {model_name} in offline mode (no pretrained)")
+            self.backbone = timm.create_model(
+                model_name, 
+                pretrained=False,
+                num_classes=0,  # Remove classifier head
+                global_pool='',  # Remove global pooling
+            )
+            print(f"✓ Created {model_name} from scratch")
         
         # Get feature dimensions
         with torch.no_grad():
