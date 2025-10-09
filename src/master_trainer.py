@@ -241,15 +241,15 @@ class MasterTrainer:
         oom_retries = 0
         forced_cpu = False
 
-        # NUCLEAR: Create fast dataloaders  
+        # SMART: Create balanced dataloaders  
         loader_cfg = {
-            'image_size': min(spec.image_size, 128),  # Cap at 128px
+            'image_size': min(spec.image_size, 160),  # Cap at 160px
             'batch_size': max(spec.batch_size, 16),   # Min 16
             'num_workers': 2,                         # Max 2 workers
             'fast_test': fast_test,
             'use_augmentations': False                # No augmentations for speed
         }
-        print(f"🚨 NUCLEAR LOADER CONFIG: {loader_cfg}")
+        print(f"🎯 SMART LOADER CONFIG: {loader_cfg}")
         train_loader, val_loader = make_dataloaders(str(self.data_root), loader_cfg)
 
         # SMART COMPROMISE: Try pretrained, fallback to offline
