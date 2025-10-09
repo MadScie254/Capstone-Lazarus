@@ -403,33 +403,88 @@ def get_albumentations_transforms(image_size: int, split: str = 'train', strengt
     else:
         # Validation/test transforms - no augmentation
         return A.Compose(base_transforms)
-        use_albu = False
+
+
+def get_torchvision_transforms(image_size: int, split: str = 'train'):
+    """Get torchvision transforms as fallback."""
+    from torchvision import transforms
     
-    if use_existing_split:
-        # Use existing train/val directories
-        train_dataset = PlantDiseaseDataset(
-            train_dir, 
-            transform=train_transform,
-            use_albumentations=use_albu
-        )
-        val_dataset = PlantDiseaseDataset(
-            val_dir,
-            transform=val_transform,
-            use_albumentations=use_albu
-        )
+    if split == 'train':
+        return transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
     else:
-        # Split single directory
-        full_dataset = PlantDiseaseDataset(
-            data_path,
-            transform=None,
-            use_albumentations=use_albu
+        return transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
+
+def make_existing_split_dataloaders(config: Dict[str, Any], data_root: Path) -> Tuple[DataLoader, DataLoader]:
+    """Create dataloaders from existing train/val split directories."""
+    train_dir = data_root / "train"
+    val_dir = data_root / "val"
+    
+    # Check if albumentations is available
+    try:
+        import albumentations
+        use_albu = True
+        train_transform = get_albumentations_transforms(
+            image_size=config['image_size'],
+            split='train',
+            strength=config.get('augmentation_strength', 'medium')
         )
-        
-        # Create indices for train/val split
-        dataset_size = len(full_dataset)
-        indices = list(range(dataset_size))
-        random.seed(config.get('seed', 42))
-        random.shuffle(indices)
+        val_transform = get_albumentations_transforms(
+            image_size=config['image_size'],
+            split='val'
+        )
+    except ImportError:
+        use_albu = False
+        train_transform = get_torchvision_transforms(
+            image_size=config['image_size'],
+            split='train'
+        )
+        val_transform = get_torchvision_transforms(
+            image_size=config['image_size'],
+            split='val'
+        )
+    
+    # Create datasets
+    train_dataset = PlantDiseaseDataset(
+        train_dir, 
+        transform=train_transform,
+        use_albumentations=use_albu
+    )
+    val_dataset = PlantDiseaseDataset(
+        val_dir,
+        transform=val_transform,
+        use_albumentations=use_albu
+    )
+    
+    # Create dataloaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=config['batch_size'],
+        shuffle=True,
+        num_workers=config.get('num_workers', 4),
+        pin_memory=True
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=config['batch_size'],
+        shuffle=False,
+        num_workers=config.get('num_workers', 4),
+        pin_memory=True
+    )
+    
+    print(f"✓ Created from existing split: {len(train_loader)} train batches, {len(val_loader)} val batches")
+    return train_loader, val_loader
         
         train_size = int(train_split * dataset_size)
         train_indices = indices[:train_size]
