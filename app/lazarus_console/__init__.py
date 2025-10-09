@@ -1452,7 +1452,7 @@ def render_header() -> None:
     col1, col2, col3, col4, col5 = st.columns([1.2, 1.2, 1.2, 1.1, 1.5])
     
     with col2:
-        model_labels = build_model_options()
+        model_labels = {key: cfg["label"] for key, cfg in MODEL_OPTIONS.items()}
         selection = st.selectbox(
             "🎛️ Model",
             options=list(MODEL_OPTIONS.keys()),

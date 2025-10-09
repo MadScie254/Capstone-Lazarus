@@ -487,4 +487,67 @@ def make_existing_split_dataloaders(config: Dict[str, Any], data_root: Path) -> 
     return train_loader, val_loader
 
 
+def create_subset_loader(
+    data_dir: str,
+    config: Dict[str, Any],
+    subset_size: int = 1000,
+    split: str = "train"
+) -> DataLoader:
+    """
+    Create a DataLoader with a subset of data for quick testing.
+    
+    Args:
+        data_dir: Data directory path
+        config: Configuration dictionary
+        subset_size: Number of samples to include
+        split: 'train' or 'val'
+        
+    Returns:
+        DataLoader with subset of data
+    """
+    import random
+    import torch.utils.data
+    
+    # Get appropriate transforms
+    try:
+        import albumentations
+        transform = get_albumentations_transforms(
+            image_size=config['image_size'],
+            split=split,
+            strength=config.get('augmentation_strength', 'light')  # Light for quick testing
+        )
+        use_albu = True
+    except ImportError:
+        transform = get_torchvision_transforms(
+            image_size=config['image_size'],
+            split=split
+        )
+        use_albu = False
+    
+    # Create dataset
+    dataset = PlantDiseaseDataset(
+        data_dir,
+        transform=transform,
+        use_albumentations=use_albu
+    )
+    
+    # Create random subset
+    subset_size = min(subset_size, len(dataset))
+    indices = random.sample(range(len(dataset)), subset_size)
+    subset_dataset = torch.utils.data.Subset(dataset, indices)
+    
+    # Create loader
+    loader = DataLoader(
+        subset_dataset,
+        batch_size=config['batch_size'],
+        shuffle=(split == 'train'),
+        num_workers=config.get('num_workers', 2),  # Fewer workers for testing
+        pin_memory=False  # Disable for quick testing
+    )
+    
+    print(f"✓ Subset loader created: {len(loader)} batches ({subset_size} samples)")
+    
+    return loader
+
+
 # Additional utility functions can be added here as needed
