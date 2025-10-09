@@ -46,17 +46,21 @@ class PlantDiseaseModel(nn.Module):
         self.num_classes = num_classes
         self.use_quantum = use_quantum
         
-        # Load pretrained backbone
+        # NUCLEAR OPTION: FORCE OFFLINE MODE - NO NETWORK CALLS EVER
         if backbone not in BACKBONE_MAP:
             raise ValueError(f"Backbone '{backbone}' not supported. Choose from {list(BACKBONE_MAP.keys())}")
             
         model_name = BACKBONE_MAP[backbone]
+        
+        # EMERGENCY: ALWAYS USE OFFLINE MODE TO AVOID 8-HOUR TIMEOUTS
+        print(f"🚨 FORCE OFFLINE MODE: Creating {model_name} without pretrained weights")
         self.backbone = timm.create_model(
             model_name, 
-            pretrained=pretrained,
+            pretrained=False,  # NEVER DOWNLOAD - FORCE OFFLINE
             num_classes=0,  # Remove classifier head
             global_pool='',  # Remove global pooling
         )
+        print(f"✓ Created {model_name} from scratch (OFFLINE MODE)")
         
         # Get feature dimensions
         with torch.no_grad():

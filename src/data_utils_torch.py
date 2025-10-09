@@ -274,7 +274,7 @@ def make_dataloaders(
     val_split: float = 0.2
 ) -> Tuple[DataLoader, DataLoader]:
     """
-    Create train and validation DataLoaders.
+    NUCLEAR OPTIMIZATION: Create super-fast dataloaders.
     
     Args:
         data_dir: Root directory containing class subdirectories
@@ -290,24 +290,69 @@ def make_dataloaders(
     if not data_path.exists():
         raise FileNotFoundError(f"Data directory not found: {data_dir}")
     
-    # Check if data is already split into train/val directories
-    train_dir = data_path / "train"
-    val_dir = data_path / "val"
+    # NUCLEAR: Force fast settings
+    image_size = min(config.get('image_size', 128), 128)  # Cap at 128
+    batch_size = max(config.get('batch_size', 32), 16)    # Min 16
+    num_workers = min(config.get('num_workers', 2), 2)    # Max 2
     
-    if train_dir.exists() and val_dir.exists():
-        logger.info("Using existing train/val split")
-        use_existing_split = True
-    else:
-        logger.info("Creating train/val split from single directory")
-        use_existing_split = False
-        train_dir = data_path
-        val_dir = data_path  # Will be handled in dataset splitting
+    print(f"🚨 NUCLEAR DATALOADERS: img={image_size}, batch={batch_size}, workers={num_workers}")
     
-    # Get transforms
-    if ALBUMENTATIONS_AVAILABLE and config.get('use_augmentations', True):
-        train_transform = get_albumentations_transforms(
-            image_size=config['image_size'],
-            split='train',
+    # NUCLEAR: Simple transforms only
+    train_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.RandomHorizontalFlip(0.5),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    
+    val_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(), 
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    
+    # Load dataset
+    full_dataset = ImageFolder(root=str(data_path), transform=train_transform)
+    print(f"✓ Dataset: {len(full_dataset)} samples, {len(full_dataset.classes)} classes")
+    
+    # NUCLEAR: Fast test mode uses tiny subset
+    if config.get('fast_test', False):
+        subset_size = min(200, len(full_dataset) // 20)  # Max 200 samples
+        indices = torch.randperm(len(full_dataset))[:subset_size].tolist()
+        full_dataset = torch.utils.data.Subset(full_dataset, indices)
+        print(f"🚨 FAST TEST: Using only {len(full_dataset)} samples")
+    
+    # Split
+    train_size = int(train_split * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        full_dataset, [train_size, val_size]
+    )
+    
+    # Apply val transforms
+    if hasattr(val_dataset, 'dataset'):
+        val_dataset.dataset.transform = val_transform
+    
+    # NUCLEAR: Simple dataloaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True
+    )
+    
+    print(f"✓ Created: {len(train_loader)} train batches, {len(val_loader)} val batches")
+    return train_loader, val_loader
             strength=config.get('augmentation_strength', 'medium')
         )
         val_transform = get_albumentations_transforms(

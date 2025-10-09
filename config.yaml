@@ -11,19 +11,19 @@ backbone: "tf_efficientnet_b0"   # timm models: tf_efficientnet_b0, resnet18, mo
 num_classes: 19
 pretrained: true
 
-# Data Configuration
-image_size: 224
-batch_size: 8               # Safe default for HP ZBook G5 (Quadro P2000 4GB VRAM)
-num_workers: 4
+# Data Configuration - NUCLEAR SPEED MODE
+image_size: 128             # NUCLEAR: Tiny images (128 vs 224)
+batch_size: 32              # NUCLEAR: Huge batches for speed
+num_workers: 2              # Reduce workers to avoid bottleneck
 pin_memory: true
 
-# Training Configuration
-epochs: 20
-lr: 1e-3
-weight_decay: 1e-4
+# Training Configuration - NUCLEAR SPEED  
+epochs: 1                   # NUCLEAR: Single epoch only
+lr: 5e-2                    # NUCLEAR: Very high learning rate
+weight_decay: 1e-5          # Lower weight decay for fast convergence
 optimizer: "AdamW"
-scheduler: "cosine"         # cosine, step, plateau
-warmup_epochs: 3
+scheduler: "constant"       # No scheduling for speed
+warmup_epochs: 0            # NUCLEAR: No warmup
 
 # Performance Optimization
 use_amp: true              # Automatic Mixed Precision for speed/memory
