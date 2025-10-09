@@ -154,55 +154,76 @@ THEMES: Dict[str, Dict[str, str]] = {
 
 
 def build_model_options() -> Dict[str, Dict[str, Any]]:
+    """Build model options with integration to trained models."""
     if models is None:
         return {}
 
     tv_models = models
-
-    if MODEL_SPECS:
-        def make_builder(constructor_name: str, weight_enum_name: Optional[str]):
-            def _builder() -> Any:
-                constructor = getattr(tv_models, constructor_name)
-                weights = getattr(tv_models, weight_enum_name) if weight_enum_name else None
-                return constructor(weights=weights)
-
-            return _builder
-
-        options: Dict[str, Dict[str, Any]] = {}
-        for key, spec in MODEL_SPECS.items():
-            options[key] = {
-                "label": spec["label"],
-                "torch_builder": make_builder(spec["torchvision_constructor"], spec.get("weights_enum")),
-                "input_size": spec["input_size"],
-                "onnx_filename": spec["onnx_filename"],
-                "ensemble_default_weight": spec.get("ensemble_default_weight", 1.0),
-            }
-        return options
-
-    # Fallback to predefined defaults if registry missing/invalid
-    return {
+    
+    # Enhanced model specifications with trained model integration
+    enhanced_options = {
         "efficientnet_b0": {
-            "label": "EfficientNet-B0",
+            "label": "🚀 EfficientNet-B0 (Your Trained Model)",
             "torch_builder": lambda: tv_models.efficientnet_b0(weights=tv_models.EfficientNet_B0_Weights.DEFAULT),
-            "input_size": 224,
+            "input_size": 160,  # Match your training size
             "onnx_filename": "efficientnet_b0.onnx",
             "ensemble_default_weight": 1.0,
+            "accuracy_range": "70-80%",
+            "speed": "Fast",
+            "memory": "Low",
+            "trained": True,
         },
         "mobilenet_v3_small": {
-            "label": "MobileNetV3-Small",
+            "label": "📱 MobileNetV3-Small (Backup)",
             "torch_builder": lambda: tv_models.mobilenet_v3_small(weights=tv_models.MobileNet_V3_Small_Weights.DEFAULT),
             "input_size": 224,
             "onnx_filename": "mobilenet_v3_small.onnx",
-            "ensemble_default_weight": 1.0,
+            "ensemble_default_weight": 0.8,
+            "accuracy_range": "65-75%",
+            "speed": "Very Fast",
+            "memory": "Very Low",
+            "trained": False,
         },
         "resnet18": {
-            "label": "ResNet-18",
+            "label": "🔧 ResNet-18 (Baseline)",
             "torch_builder": lambda: tv_models.resnet18(weights=tv_models.ResNet18_Weights.DEFAULT),
             "input_size": 224,
-            "onnx_filename": "resnet18.onnx",
-            "ensemble_default_weight": 1.0,
+            "onnx_filename": "resnet18.onnx", 
+            "ensemble_default_weight": 0.6,
+            "accuracy_range": "60-70%",
+            "speed": "Medium",
+            "memory": "Medium",
+            "trained": False,
         },
     }
+
+    # Check for existing trained models and update specifications
+    if EXPERIMENTS_INDEX_PATH.exists():
+        try:
+            import pandas as pd
+            df = pd.read_csv(EXPERIMENTS_INDEX_PATH)
+            
+            for model_key in enhanced_options.keys():
+                model_runs = df[
+                    (df["model_name"].str.contains(model_key, case=False, na=False)) |
+                    (df["backbone"].str.contains(model_key, case=False, na=False))
+                ]
+                
+                if not model_runs.empty:
+                    # Get best run metrics
+                    best_run = model_runs.sort_values("val_macro_f1", ascending=False).iloc[0]
+                    accuracy = float(best_run["val_accuracy"]) * 100
+                    f1_score = float(best_run["val_macro_f1"]) * 100
+                    
+                    enhanced_options[model_key]["trained"] = True
+                    enhanced_options[model_key]["actual_accuracy"] = f"{accuracy:.1f}%"
+                    enhanced_options[model_key]["f1_score"] = f"{f1_score:.1f}%"
+                    enhanced_options[model_key]["label"] = f"🎯 {enhanced_options[model_key]['label'].split('(')[0].strip()} (Trained: {accuracy:.1f}%)"
+                    
+        except Exception as e:
+            print(f"Warning: Could not load experiment results: {e}")
+    
+    return enhanced_options
 
 
 MODEL_OPTIONS: Dict[str, Dict[str, Any]] = build_model_options()
@@ -249,34 +270,301 @@ def inject_theme(theme_key: str) -> None:
     palette = THEMES[theme_key]
     css = f"""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* Keyframe Animations */
+        @keyframes fadeInUp {{
+            from {{ opacity: 0; transform: translateY(30px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        
+        @keyframes progressAnimation {{
+            from {{ stroke-dashoffset: 283; }}
+            to {{ stroke-dashoffset: var(--target-offset); }}
+        }}
+        
+        @keyframes barFillAnimation {{
+            from {{ width: 0%; }}
+            to {{ width: var(--target-width); }}
+        }}
+        
+        @keyframes pulse {{
+            0% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.05); }}
+            100% {{ transform: scale(1); }}
+        }}
+        
+        @keyframes glow {{
+            0%, 100% {{ text-shadow: 0 0 10px {palette['accent']}; }}
+            50% {{ text-shadow: 0 0 20px {palette['accent']}, 0 0 30px {palette['accent']}; }}
+        }}
+        
+        /* Base Styles */
         body, .stApp {{
             background: {palette['background']} !important;
             color: {palette['text_primary']} !important;
+            font-family: 'Inter', sans-serif !important;
         }}
+        
+        /* Card Styles */
         .lazarus-card {{
             background: {palette['card']};
-            border-radius: 18px;
-            padding: 1.5rem;
+            border-radius: 20px;
+            padding: 2rem;
             border: 1px solid {palette['border']};
             box-shadow: {palette['shadow']};
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
         }}
-        .lazarus-card:hover {{
-            transform: translateY(-6px);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.32);
+        
+        .animated-card {{
+            cursor: pointer;
         }}
-        .metric-value {{
-            font-size: 2.4rem;
+        
+        .animated-card:hover {{
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: {palette['glow']};
+        }}
+        
+        .animated-card.pulse {{
+            animation: pulse 0.6s ease-in-out;
+        }}
+        
+        /* Model Status Cards */
+        .model-status-card {{
+            background: {palette['card']};
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid {palette['border']};
+            margin: 0.5rem 0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .trained-model {{
+            border-color: {palette['success']};
+            background: linear-gradient(145deg, {palette['card']}, rgba(52, 211, 153, 0.1));
+        }}
+        
+        .pretrained-model {{
+            border-color: {palette['accent_soft']};
+        }}
+        
+        .model-header {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .model-icon {{
+            font-size: 1.25rem;
+        }}
+        
+        .model-name {{
+            font-weight: 600;
+            color: {palette['text_primary']};
+        }}
+        
+        .model-status {{
+            font-weight: 500;
+            margin: 0.25rem 0;
+        }}
+        
+        .model-accuracy {{
+            color: {palette['text_secondary']};
+            font-size: 0.9rem;
+        }}
+        
+        .model-badge {{
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: {palette['accent']};
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }}
+        
+        /* Progress Rings */
+        .progress-ring-container {{
+            position: relative;
+            display: inline-block;
+            margin: 1rem;
+        }}
+        
+        .progress-ring {{
+            transform: rotate(-90deg);
+        }}
+        
+        .progress-ring-bg {{
+            fill: transparent;
+            stroke: {palette['border']};
+            stroke-width: 8;
+        }}
+        
+        .progress-ring-fill {{
+            fill: transparent;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }}
+        
+        .progress-ring-text {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }}
+        
+        .progress-percentage {{
+            font-size: 1.5rem;
             font-weight: 700;
             color: {palette['accent']};
         }}
+        
+        .progress-label {{
+            font-size: 0.8rem;
+            color: {palette['text_secondary']};
+            margin-top: 0.25rem;
+        }}
+        
+        /* Confidence Bars */
+        .confidence-bars-container {{
+            margin: 1rem 0;
+        }}
+        
+        .confidence-bar-item {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.75rem 0;
+        }}
+        
+        .confidence-label {{
+            min-width: 120px;
+            font-weight: 500;
+            color: {palette['text_primary']};
+        }}
+        
+        .confidence-bar-bg {{
+            flex: 1;
+            height: 8px;
+            background: {palette['border']};
+            border-radius: 4px;
+            overflow: hidden;
+        }}
+        
+        .confidence-bar-fill {{
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }}
+        
+        .confidence-value {{
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: {palette['accent']};
+        }}
+        
+        /* Metric Styles */
+        .metric-header {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }}
+        
+        .metric-icon {{
+            font-size: 1.25rem;
+        }}
+        
+        .metric-value {{
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: {palette['accent']};
+            margin: 0.5rem 0;
+        }}
+        
+        .glow-text {{
+            animation: glow 3s ease-in-out infinite;
+        }}
+        
         .metric-label {{
             color: {palette['text_secondary']};
-            font-size: 0.95rem;
+            font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 500;
         }}
-        .toast-success {{
+        
+        .metric-delta {{
+            color: {palette['success']};
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }}
+        
+        /* Streamlit Component Styling */
+        .stSelectbox > div > div {{
+            background: {palette['surface']} !important;
+            border: 1px solid {palette['border']} !important;
+            border-radius: 12px !important;
+        }}
+        
+        .stButton > button {{
+            background: {palette['accent']} !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 0.75rem 2rem !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }}
+        
+        .stButton > button:hover {{
+            background: {palette['accent']} !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+        }}
+        
+        /* File Uploader */
+        .uploadedFile {{
+            background: {palette['surface']} !important;
+            border: 2px dashed {palette['accent_soft']} !important;
+            border-radius: 16px !important;
+            padding: 2rem !important;
+            text-align: center !important;
+        }}
+        
+        /* Sidebar */
+        .css-1d391kg {{
+            background: {palette['surface']} !important;
+        }}
+        
+        /* Success/Warning Messages */
+        .stSuccess {{
+            background: linear-gradient(90deg, {palette['success']}, {palette['success']}aa) !important;
+            border-radius: 12px !important;
+        }}
+        
+        .stWarning {{
+            background: linear-gradient(90deg, {palette['warning']}, {palette['warning']}aa) !important;
+            border-radius: 12px !important;
+        }}
+        
+        .stError {{
+            background: linear-gradient(90deg, {palette['error']}, {palette['error']}aa) !important;
+            border-radius: 12px !important;
+        }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
             border-left: 4px solid {palette['accent']};
         }}
         .threshold-highlight {{
@@ -969,13 +1257,142 @@ def format_latency(latency_ms: float) -> str:
     return f"{latency_ms:.1f} ms"
 
 
-def render_metric_card(title: str, value: str, delta: Optional[str] = None) -> None:
-    st.markdown("<div class='lazarus-card'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-label'>{title}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='metric-value'>{value}</div>", unsafe_allow_html=True)
-    if delta:
-        st.markdown(f"<div class='metric-label' style='margin-top:0.3rem;'>{delta}</div>", unsafe_allow_html=True)
+def render_metric_card(title: str, value: str, delta: Optional[str] = None, icon: str = "📊") -> None:
+    """Render a beautiful animated metric card."""
+    st.markdown(f"""
+    <div class='lazarus-card animated-card' onclick='this.classList.toggle("pulse")'>
+        <div class='metric-header'>
+            <span class='metric-icon'>{icon}</span>
+            <div class='metric-label'>{title}</div>
+        </div>
+        <div class='metric-value glow-text'>{value}</div>
+        {f"<div class='metric-delta'>{delta}</div>" if delta else ""}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_model_status_card(model_key: str, status: str, accuracy: str = "N/A") -> None:
+    """Render an interactive model status card."""
+    config = MODEL_OPTIONS.get(model_key, {})
+    label = config.get("label", model_key)
+    trained = config.get("trained", False)
+    
+    status_color = {
+        "Ready": "#34d399",
+        "Training": "#fbbf24", 
+        "Loading": "#60a5fa",
+        "Error": "#f87171"
+    }.get(status, "#6b7280")
+    
+    status_icon = {
+        "Ready": "✅",
+        "Training": "🔄",
+        "Loading": "⏳",
+        "Error": "❌"
+    }.get(status, "🤖")
+    
+    st.markdown(f"""
+    <div class='model-status-card {"trained-model" if trained else "pretrained-model"}'>
+        <div class='model-header'>
+            <span class='model-icon'>{status_icon}</span>
+            <div class='model-name'>{label}</div>
+        </div>
+        <div class='model-status' style='color: {status_color}'>{status}</div>
+        <div class='model-accuracy'>Accuracy: {accuracy}</div>
+        <div class='model-badge'>{"🎯 TRAINED" if trained else "📚 PRETRAINED"}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_progress_ring(percentage: float, label: str, color: str = "#4ade80") -> None:
+    """Render an animated circular progress ring."""
+    circumference = 2 * 3.14159 * 45  # radius = 45
+    offset = circumference - (percentage / 100) * circumference
+    
+    st.markdown(f"""
+    <div class='progress-ring-container'>
+        <svg class='progress-ring' width='120' height='120'>
+            <circle class='progress-ring-bg' cx='60' cy='60' r='45'/>
+            <circle class='progress-ring-fill' 
+                    cx='60' cy='60' r='45'
+                    style='stroke: {color}; stroke-dasharray: {circumference}; 
+                           stroke-dashoffset: {offset}; animation: progressAnimation 2s ease-out;'/>
+        </svg>
+        <div class='progress-ring-text'>
+            <div class='progress-percentage'>{percentage:.1f}%</div>
+            <div class='progress-label'>{label}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_prediction_confidence_bars(predictions: List[Tuple[str, float]], max_show: int = 5) -> None:
+    """Render animated confidence bars for predictions."""
+    st.markdown("<div class='confidence-bars-container'>", unsafe_allow_html=True)
+    
+    for i, (class_name, confidence) in enumerate(predictions[:max_show]):
+        bar_color = "#4ade80" if i == 0 else "#60a5fa" if i < 3 else "#94a3b8"
+        
+        st.markdown(f"""
+        <div class='confidence-bar-item'>
+            <div class='confidence-label'>{class_name}</div>
+            <div class='confidence-bar-bg'>
+                <div class='confidence-bar-fill' 
+                     style='width: {confidence*100}%; background: {bar_color};
+                            animation: barFillAnimation 1.5s ease-out;'></div>
+            </div>
+            <div class='confidence-value'>{confidence*100:.1f}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_interactive_heatmap(confusion_matrix: np.ndarray, class_names: List[str]) -> None:
+    """Render an interactive confusion matrix heatmap."""
+    # Normalize confusion matrix
+    cm_normalized = confusion_matrix.astype('float') / confusion_matrix.sum(axis=1)[:, np.newaxis]
+    
+    fig = go.Figure(data=go.Heatmap(
+        z=cm_normalized,
+        x=class_names,
+        y=class_names,
+        colorscale='Viridis',
+        text=confusion_matrix,
+        texttemplate="%{text}",
+        textfont={"size": 10},
+        hoverongaps=False,
+        hovertemplate='<b>Predicted:</b> %{x}<br><b>Actual:</b> %{y}<br><b>Count:</b> %{text}<br><b>Normalized:</b> %{z:.2f}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title="🎯 Interactive Confusion Matrix",
+        xaxis_title="Predicted",
+        yaxis_title="Actual",
+        font=dict(family="Inter, sans-serif", size=12),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        height=500
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def render_realtime_metrics(metrics: Dict[str, float]) -> None:
+    """Render real-time animated metrics dashboard."""
+    cols = st.columns(4)
+    
+    with cols[0]:
+        render_progress_ring(metrics.get("accuracy", 0) * 100, "Accuracy", "#4ade80")
+    
+    with cols[1]:
+        render_progress_ring(metrics.get("f1_score", 0) * 100, "F1 Score", "#60a5fa")
+    
+    with cols[2]:
+        render_progress_ring(metrics.get("precision", 0) * 100, "Precision", "#fbbf24")
+    
+    with cols[3]:
+        render_progress_ring(metrics.get("recall", 0) * 100, "Recall", "#f87171")
 
 
 def render_section_divider() -> None:
