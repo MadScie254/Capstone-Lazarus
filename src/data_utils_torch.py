@@ -315,12 +315,21 @@ def make_dataloaders(
     full_dataset = ImageFolder(root=str(data_path), transform=train_transform)
     print(f"✓ Dataset: {len(full_dataset)} samples, {len(full_dataset.classes)} classes")
     
-    # NUCLEAR: Fast test mode uses tiny subset
+    # SMART COMPROMISE: Use more data unless fast_test
     if config.get('fast_test', False):
-        subset_size = min(200, len(full_dataset) // 20)  # Max 200 samples
+        subset_size = min(500, len(full_dataset) // 10)  # 10% for fast test
         indices = torch.randperm(len(full_dataset))[:subset_size].tolist()
         full_dataset = torch.utils.data.Subset(full_dataset, indices)
-        print(f"🚨 FAST TEST: Using only {len(full_dataset)} samples")
+        print(f"🚨 FAST TEST: Using {len(full_dataset)} samples")
+    else:
+        # SMART: Use 20% of data for better accuracy
+        subset_size = min(2000, len(full_dataset) // 5)  # 20% max 2000 samples
+        if subset_size < len(full_dataset):
+            indices = torch.randperm(len(full_dataset))[:subset_size].tolist()
+            full_dataset = torch.utils.data.Subset(full_dataset, indices)
+            print(f"🎯 SMART MODE: Using {len(full_dataset)} samples (20%)")
+        else:
+            print(f"✓ Using full dataset: {len(full_dataset)} samples")
     
     # Split
     train_size = int(train_split * len(full_dataset))
