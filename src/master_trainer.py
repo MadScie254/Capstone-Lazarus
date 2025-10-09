@@ -719,7 +719,8 @@ class MasterTrainer:
             return len(dataset.dataset.classes)
         if hasattr(dataset, "classes"):
             return len(dataset.classes)
-        raise ValueError("Unable to infer number of classes from dataset")
+        # Fallback to disk scan if dataset doesn't preserve classes attribute
+        return self._infer_num_classes_from_disk()
 
     def _infer_num_classes_from_disk(self) -> int:
         class_dirs = [p for p in self.data_root.iterdir() if p.is_dir()]
