@@ -1513,8 +1513,29 @@ def render_header() -> None:
 
 
 def render_home_section(metrics_cache: Dict[str, Any]) -> None:
+    """Enhanced home section with beautiful interactive metrics."""
     render_section_divider()
-    st.subheader("Mission Readiness Dashboard")
+    st.markdown("### 🏠 Mission Control Dashboard")
+    st.markdown("---")
+    
+    # Real-time model status cards
+    st.markdown("#### 🤖 Model Fleet Status")
+    cols = st.columns(len(MODEL_OPTIONS))
+    
+    for idx, (model_key, config) in enumerate(MODEL_OPTIONS.items()):
+        with cols[idx]:
+            # Determine model status
+            checkpoint_path = get_best_checkpoint_for_model(model_key)
+            if checkpoint_path and checkpoint_path.exists():
+                status = "Ready"
+                accuracy = config.get("actual_accuracy", "N/A")
+            else:
+                status = "Pretrained Only"
+                accuracy = config.get("accuracy_range", "N/A")
+            
+            render_model_status_card(model_key, status, accuracy)
+    
+    st.markdown("---")
 
     latest_run = metrics_cache.get("latest_run") or {}
 
@@ -1533,21 +1554,40 @@ def render_home_section(metrics_cache: Dict[str, Any]) -> None:
     if isinstance(latency_value, (int, float)) and not math.isnan(latency_value):
         latency_display = format_latency(float(latency_value))
 
+    # Interactive metrics dashboard
+    if metrics_cache and metrics_cache.get("total_experiments", 0) > 0:
+        st.markdown("#### 📊 Performance Metrics")
+        
+        # Real-time animated metrics
+        if latest_run:
+            metrics = {
+                "accuracy": latest_run.get("val_accuracy", 0),
+                "f1_score": latest_run.get("val_macro_f1", 0),
+                "precision": metrics_cache.get("precision", 0),
+                "recall": best_recall if not math.isnan(best_recall) else 0
+            }
+            render_realtime_metrics(metrics)
+        
+        st.markdown("---")
+
+    # Enhanced metric cards with animations
     metric_cols = st.columns(4)
     with metric_cols[0]:
-        render_metric_card("Macro F1", _fmt_metric(metrics_cache.get("macro_f1")))
+        render_metric_card("Macro F1", _fmt_metric(metrics_cache.get("macro_f1")), "🎯 Model Performance", "🎯")
     with metric_cols[1]:
         render_metric_card(
             "Critical Recall",
             _fmt_metric(best_recall),
-            delta="Highest per-class recall",
+            "🔍 Disease Detection",
+            "🔍"
         )
     with metric_cols[2]:
-        render_metric_card("Latency", latency_display, delta="batch=8 warm fwd")
+        render_metric_card("Latency", latency_display, "⚡ Speed", "⚡")
     with metric_cols[3]:
-        render_metric_card("Model Size", metrics_cache.get("model_size", "—"), delta="Parameter footprint")
+        render_metric_card("Model Size", metrics_cache.get("model_size", "—"), "💾 Footprint", "💾")
 
     if latest_run:
+        st.markdown("---")
         summary_parts = []
         macro_val = latest_run.get("val_macro_f1")
         acc_val = latest_run.get("val_accuracy")
@@ -1581,17 +1621,28 @@ def render_home_section(metrics_cache: Dict[str, Any]) -> None:
         else:
             st.info("No checkpoints recorded yet. Run training to populate this feed.")
     with col2:
-        st.markdown("### Quick Actions")
+        st.markdown("### ⚡ Quick Actions")
         qa_col1, qa_col2 = st.columns(2)
         with qa_col1:
-            if st.button("⚡ Jump to Inference", use_container_width=True):
+            if st.button("🔬 Start Inference", use_container_width=True):
                 st.session_state.current_section = "Inference"
-                getattr(st, "experimental_rerun", lambda: None)()
+                st.rerun()
         with qa_col2:
             if st.button("🧬 Explainability Studio", use_container_width=True):
                 st.session_state.current_section = "Explainability"
-                getattr(st, "experimental_rerun", lambda: None)()
-        st.markdown("Predict now, inspect later. Ensemble toggle supercharges reliability.")
+                st.rerun()
+        
+        qa_col3, qa_col4 = st.columns(2)
+        with qa_col3:
+            if st.button("📊 Compare Models", use_container_width=True):
+                st.session_state.current_section = "Model Comparison"
+                st.rerun()
+        with qa_col4:
+            if st.button("🔧 Model Hub", use_container_width=True):
+                st.session_state.current_section = "Model Hub"
+                st.rerun()
+        
+        st.caption("Predict now, inspect later. Ensemble toggle supercharges reliability.")
 
 
 # --------------------------------------------------------------------------------------------------
