@@ -1405,29 +1405,55 @@ def render_section_divider() -> None:
 
 
 def render_header() -> None:
+    """Render beautiful animated header with theme switcher."""
     if not MODEL_OPTIONS:
         st.error("TorchVision must be installed to use Lazarus Console.")
         return
-    palette = THEMES[st.session_state.theme]
-    st.markdown(
-        f"""
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 0 1.5rem 0;">
-            <div>
-                <h1 style="margin:0; color:{palette['text_primary']}; font-weight:800;">🌱 Lazarus Console</h1>
-                <p style="margin:0; color:{palette['text_secondary']}; max-width:720px;">AI Plant Disease Diagnostics Mission Control — inference, explainability, calibration, and deployment readiness in a single ultra-immersive console.</p>
+        
+    # Enhanced header with animation and theme switcher
+    header_col, theme_col = st.columns([4, 1])
+    
+    with header_col:
+        st.markdown("""
+        <div class='header-container'>
+            <h1 style='font-size: 3.5rem; margin: 0; background: linear-gradient(45deg, #4ade80, #60a5fa); 
+                       -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeInUp 1s ease-out;'>
+                🌱 Lazarus Console
+            </h1>
+            <p style='font-size: 1.2rem; margin: 0.5rem 0; opacity: 0.8; animation: fadeInUp 1s ease-out 0.2s both;'>
+                Immersive Plant Disease Diagnostics • AI-Powered Agriculture
+            </p>
+            <div style='display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; animation: fadeInUp 1s ease-out 0.4s both;'>
+                <span class='feature-badge'>🎯 <strong>Your Trained Models</strong></span>
+                <span class='feature-badge'>⚡ <strong>Real-time Inference</strong></span>
+                <span class='feature-badge'>🔬 <strong>Explainable AI</strong></span>
             </div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        """, unsafe_allow_html=True)
+    
+    with theme_col:
+        st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+        theme_options = {
+            "dark": "🌙 Dark",
+            "light": "☀️ Light", 
+            "neon": "⚡ Neon"
+        }
+        new_theme = st.selectbox(
+            "Theme",
+            options=list(theme_options.keys()),
+            format_func=lambda x: theme_options[x],
+            index=list(theme_options.keys()).index(st.session_state.theme)
+        )
+        if new_theme != st.session_state.theme:
+            st.session_state.theme = new_theme
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
+    # Enhanced model and precision selection
     col1, col2, col3, col4, col5 = st.columns([1.2, 1.2, 1.2, 1.1, 1.5])
-    with col1:
-        theme_choice = st.toggle("🌗 Dark Mode", value=st.session_state.theme == "dark")
-        st.session_state.theme = "dark" if theme_choice else "light"
-
+    
     with col2:
-        model_labels = {key: cfg["label"] for key, cfg in MODEL_OPTIONS.items()}
+        model_labels = build_model_options()
         selection = st.selectbox(
             "🎛️ Model",
             options=list(MODEL_OPTIONS.keys()),
