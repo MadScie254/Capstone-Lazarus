@@ -561,22 +561,21 @@ def inject_theme(theme_key: str) -> None:
         .stError {{
             background: linear-gradient(90deg, {palette['error']}, {palette['error']}aa) !important;
             border-radius: 12px !important;
-        }}
-    </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
             border-left: 4px solid {palette['accent']};
         }}
+        
         .threshold-highlight {{
             background: {palette['accent_soft']};
             border-radius: 12px;
             padding: 0.75rem 1rem;
         }}
+        
         .section-divider {{
             height: 1px;
             background: {palette['border']};
             margin: 2.5rem 0 1.5rem 0;
         }}
+        
         .skeleton {{
             background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%);
             background-size: 200% 100%;

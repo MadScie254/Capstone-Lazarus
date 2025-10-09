@@ -362,22 +362,47 @@ def make_dataloaders(
     
     print(f"✓ Created: {len(train_loader)} train batches, {len(val_loader)} val batches")
     return train_loader, val_loader
-            strength=config.get('augmentation_strength', 'medium')
-        )
-        val_transform = get_albumentations_transforms(
-            image_size=config['image_size'],
-            split='val'
-        )
-        use_albu = True
+
+
+def get_albumentations_transforms(image_size: int, split: str = 'train', strength: str = 'medium'):
+    """Get albumentations transforms with specified strength."""
+    import albumentations as A
+    from albumentations.pytorch import ToTensorV2
+    
+    # Base transforms for all modes
+    base_transforms = [
+        A.Resize(height=image_size, width=image_size),
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ToTensorV2()
+    ]
+    
+    if split == 'train':
+        # Training augmentations based on strength
+        if strength == 'light':
+            train_transforms = [
+                A.HorizontalFlip(p=0.5),
+                A.RandomBrightnessContrast(p=0.2)
+            ] + base_transforms
+        elif strength == 'medium':
+            train_transforms = [
+                A.HorizontalFlip(p=0.5),
+                A.VerticalFlip(p=0.2),
+                A.RandomBrightnessContrast(p=0.3),
+                A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.3)
+            ] + base_transforms
+        else:  # heavy
+            train_transforms = [
+                A.HorizontalFlip(p=0.5),
+                A.VerticalFlip(p=0.3),
+                A.RandomBrightnessContrast(p=0.4),
+                A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.4),
+                A.HueSaturationValue(p=0.3)
+            ] + base_transforms
+        
+        return A.Compose(train_transforms)
     else:
-        train_transform = get_torchvision_transforms(
-            image_size=config['image_size'],
-            split='train'
-        )
-        val_transform = get_torchvision_transforms(
-            image_size=config['image_size'],
-            split='val'
-        )
+        # Validation/test transforms - no augmentation
+        return A.Compose(base_transforms)
         use_albu = False
     
     if use_existing_split:
