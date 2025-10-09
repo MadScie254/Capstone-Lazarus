@@ -11,19 +11,19 @@ backbone: "tf_efficientnet_b0"   # timm models: tf_efficientnet_b0, resnet18, mo
 num_classes: 19
 pretrained: true
 
-# Data Configuration - NUCLEAR SPEED MODE
-image_size: 128             # NUCLEAR: Tiny images (128 vs 224)
-batch_size: 32              # NUCLEAR: Huge batches for speed
-num_workers: 2              # Reduce workers to avoid bottleneck
+# Data Configuration - SMART COMPROMISE
+image_size: 160             # SMART: Medium images (160 vs 224)
+batch_size: 24              # SMART: Large batches for speed
+num_workers: 2              # Keep low to avoid bottleneck
 pin_memory: true
 
-# Training Configuration - NUCLEAR SPEED  
-epochs: 1                   # NUCLEAR: Single epoch only
-lr: 5e-2                    # NUCLEAR: Very high learning rate
-weight_decay: 1e-5          # Lower weight decay for fast convergence
+# Training Configuration - SMART COMPROMISE  
+epochs: 3                   # SMART: 3 epochs for better accuracy
+lr: 2e-2                    # SMART: High but not extreme learning rate
+weight_decay: 1e-4          # Normal weight decay
 optimizer: "AdamW"
-scheduler: "constant"       # No scheduling for speed
-warmup_epochs: 0            # NUCLEAR: No warmup
+scheduler: "cosine"         # Keep cosine for better convergence
+warmup_epochs: 0            # No warmup for speed
 
 # Performance Optimization
 use_amp: true              # Automatic Mixed Precision for speed/memory
