@@ -16,3 +16,4 @@
 2025-11-25 01:02:24 | INFO | ✓ Model created: resnet18
 2025-11-25 01:05:59 | INFO | Phase 'head' complete | Acc=0.1053 | F1=0.0938
 2025-11-25 01:06:43 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-25 01:10:58 | INFO | Phase 'head' complete | Acc=0.6717 | F1=0.6511
