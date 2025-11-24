@@ -1,0 +1,58 @@
+{
+  "model": {
+    "name": "efficientnet_b0",
+    "backbone": "tf_efficientnet_b0",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 4,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 6,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 4,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Reference model used for production ensemble"
+  },
+  "metrics": {
+    "val_accuracy": 0.18421052631578946,
+    "val_macro_f1": 0.13520074696545284,
+    "val_macro_recall": 0.21568627450980393
+  },
+  "total_epochs": 1,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 1,
+      "metrics": {
+        "val_accuracy": 0.15789473684210525,
+        "val_macro_f1": 0.11736694677871148,
+        "val_macro_recall": 0.1568627450980392
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.7.1+cu118",
+    "cuda_available": true,
+    "cuda_device": "Quadro P2000",
+    "cuda_total_memory_gb": 4.294836224,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "ONNX export failed: Module onnx is not installed!"
+  ]
+}

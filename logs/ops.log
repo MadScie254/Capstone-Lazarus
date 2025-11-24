@@ -6,3 +6,7 @@
 2025-11-25 00:53:28 | INFO | ✓ Model created: tf_efficientnet_b0
 2025-11-25 00:55:22 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
 2025-11-25 00:55:24 | INFO | ✓ Model created: tf_efficientnet_b0
+2025-11-25 00:56:15 | INFO | Phase 'head' complete | Acc=0.1579 | F1=0.1174
+2025-11-25 00:57:28 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-25 00:57:28 | INFO | Starting run for model 'mobilenet_v3_small' (fast_test=True)
+2025-11-25 00:57:42 | INFO | ✓ Model created: mobilenetv3_small
