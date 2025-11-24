@@ -14,3 +14,4 @@
 2025-11-25 01:01:50 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
 2025-11-25 01:01:50 | INFO | Starting run for model 'resnet18' (fast_test=True)
 2025-11-25 01:02:24 | INFO | ✓ Model created: resnet18
+2025-11-25 01:05:59 | INFO | Phase 'head' complete | Acc=0.1053 | F1=0.0938
