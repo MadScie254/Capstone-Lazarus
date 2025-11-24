@@ -4,3 +4,5 @@
 2025-11-25 00:42:29 | INFO | ✓ Model created: tf_efficientnet_b0
 2025-11-25 00:53:25 | INFO | Starting run for model 'efficientnet_b0' (fast_test=True)
 2025-11-25 00:53:28 | INFO | ✓ Model created: tf_efficientnet_b0
+2025-11-25 00:55:22 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
+2025-11-25 00:55:24 | INFO | ✓ Model created: tf_efficientnet_b0
