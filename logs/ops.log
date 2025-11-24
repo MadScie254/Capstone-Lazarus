@@ -10,3 +10,7 @@
 2025-11-25 00:57:28 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
 2025-11-25 00:57:28 | INFO | Starting run for model 'mobilenet_v3_small' (fast_test=True)
 2025-11-25 00:57:42 | INFO | ✓ Model created: mobilenetv3_small
+2025-11-25 01:01:06 | INFO | Phase 'head' complete | Acc=0.0263 | F1=0.0096
+2025-11-25 01:01:50 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-25 01:01:50 | INFO | Starting run for model 'resnet18' (fast_test=True)
+2025-11-25 01:02:24 | INFO | ✓ Model created: resnet18

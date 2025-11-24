@@ -1,0 +1,58 @@
+{
+  "model": {
+    "name": "mobilenet_v3_small",
+    "backbone": "mobilenetv3_small",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.0007,
+    "weight_decay": 5e-05,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 3,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 5,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 6,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Optimized for mobile/edge deployments"
+  },
+  "metrics": {
+    "val_accuracy": 0.02631578947368421,
+    "val_macro_f1": 0.008097165991902834,
+    "val_macro_recall": 0.05263157894736842
+  },
+  "total_epochs": 1,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 1,
+      "metrics": {
+        "val_accuracy": 0.02631578947368421,
+        "val_macro_f1": 0.009569377990430622,
+        "val_macro_recall": 0.05263157894736842
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.7.1+cu118",
+    "cuda_available": true,
+    "cuda_device": "Quadro P2000",
+    "cuda_total_memory_gb": 4.294836224,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "ONNX export failed: Module onnx is not installed!"
+  ]
+}
