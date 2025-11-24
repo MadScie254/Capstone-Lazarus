@@ -6,3 +6,11 @@
 2025-10-04 07:40:09 | INFO | Phase 'finetune' complete | Acc=0.8521 | F1=0.7937
 2025-10-04 07:44:32 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
 2025-10-04 07:44:36 | INFO | Starting run for model 'mobilenet_v3_small' (fast_test=False)
+2025-10-09 20:44:26 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
+2025-10-09 20:45:19 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
+2025-10-09 20:45:41 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
+2025-10-09 20:46:23 | INFO | Starting run for model 'efficientnet_b0' (fast_test=False)
+2025-10-09 20:46:25 | INFO | ✓ Model created: tf_efficientnet_b0
+2025-10-09 20:56:19 | INFO | Phase 'head' complete | Acc=0.6975 | F1=0.5748
+2025-10-09 21:09:48 | INFO | Phase 'finetune' complete | Acc=0.7275 | F1=0.6057
+2025-10-09 21:10:59 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
