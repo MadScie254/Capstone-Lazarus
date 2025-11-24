@@ -244,7 +244,7 @@ def _format_timestamp(ts) -> str:
 
 def ensure_session_state() -> None:
     defaults = {
-        "theme": "dark",
+        "theme": "neon",
         "selected_model": "efficientnet_b0",
         "precision_mode": "AMP",
         "enable_ensemble": False,
