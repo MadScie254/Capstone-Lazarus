@@ -1,0 +1,58 @@
+{
+  "model": {
+    "name": "resnet18",
+    "backbone": "resnet18",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.0008,
+    "weight_decay": 0.0001,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 4,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 5,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 3,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Robust classic architecture for ensemble diversity"
+  },
+  "metrics": {
+    "val_accuracy": 0.10526315789473684,
+    "val_macro_f1": 0.08796296296296295,
+    "val_macro_recall": 0.08796296296296297
+  },
+  "total_epochs": 1,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 1,
+      "metrics": {
+        "val_accuracy": 0.10526315789473684,
+        "val_macro_f1": 0.09382716049382715,
+        "val_macro_recall": 0.09259259259259259
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.7.1+cu118",
+    "cuda_available": true,
+    "cuda_device": "Quadro P2000",
+    "cuda_total_memory_gb": 4.294836224,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "ONNX export failed: Module onnx is not installed!"
+  ]
+}
