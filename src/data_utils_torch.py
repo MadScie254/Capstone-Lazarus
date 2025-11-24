@@ -255,21 +255,6 @@ def create_weighted_sampler(dataset) -> WeightedRandomSampler:
     class_weights = num_samples / (len(class_counts) * class_counts)
     
     # Assign weight to each sample
-    sample_weights = [class_weights[label] for label in labels]
-    
-    logger.info(f"Class distribution: {dict(enumerate(class_counts))}")
-    logger.info(f"Class weights: {dict(enumerate(class_weights))}")
-    
-    return WeightedRandomSampler(
-        weights=sample_weights,
-                image = transformed['image']
-            else:
-                # Standard torchvision transforms
-                image = self.transform(image)
-        else:
-            # Default: convert to tensor
-            image = transforms.ToTensor()(image)
-            
         return image, label
 
 
@@ -450,20 +435,6 @@ def create_weighted_sampler(dataset) -> WeightedRandomSampler:
     class_weights = num_samples / (len(class_counts) * class_counts)
     
     # Assign weight to each sample
-    sample_weights = [class_weights[label] for label in labels]
-    
-    logger.info(f"Class distribution: {dict(enumerate(class_counts))}")
-    logger.info(f"Class weights: {dict(enumerate(class_weights))}")
-    
-    return WeightedRandomSampler(
-        weights=sample_weights,
-        num_samples=len(sample_weights),
-        replacement=True
-    )
-
-
-def create_balanced_subset(
-    dataset: Dataset,
     samples_per_class: int = 10,
     total_max: Optional[int] = None
 ) -> torch.utils.data.Subset:
