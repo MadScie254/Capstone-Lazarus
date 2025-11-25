@@ -1,0 +1,56 @@
+{
+  "model": {
+    "name": "mobilenet_v3_small",
+    "backbone": "mobilenetv3_small",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.0007,
+    "weight_decay": 5e-05,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 3,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 5,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 6,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Optimized for mobile/edge deployments"
+  },
+  "metrics": {
+    "val_accuracy": 0.13157894736842105,
+    "val_macro_f1": 0.11228070175438597,
+    "val_macro_recall": 0.11842105263157894
+  },
+  "total_epochs": 1,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 1,
+      "metrics": {
+        "val_accuracy": 0.15789473684210525,
+        "val_macro_f1": 0.13533834586466167,
+        "val_macro_recall": 0.14473684210526316
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.8.0+cpu",
+    "cuda_available": false,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "TFLite export failed: No module named 'onnx_tf'"
+  ]
+}
