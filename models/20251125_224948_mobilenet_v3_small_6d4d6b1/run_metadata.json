@@ -1,0 +1,66 @@
+{
+  "model": {
+    "name": "mobilenet_v3_small",
+    "backbone": "mobilenetv3_small",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.0007,
+    "weight_decay": 5e-05,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 3,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 5,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 6,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Optimized for mobile/edge deployments"
+  },
+  "metrics": {
+    "val_accuracy": 0.7518796992481203,
+    "val_macro_f1": 0.7526797238485328,
+    "val_macro_recall": 0.7613151872817054
+  },
+  "total_epochs": 7,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 3,
+      "metrics": {
+        "val_accuracy": 0.6591478696741855,
+        "val_macro_f1": 0.6471942676779272,
+        "val_macro_recall": 0.6618557764165306
+      },
+      "batch_size": 8
+    },
+    {
+      "phase": "finetune",
+      "epochs": 5,
+      "metrics": {
+        "val_accuracy": 0.7293233082706767,
+        "val_macro_f1": 0.7284696951874536,
+        "val_macro_recall": 0.7376864514104067
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.8.0+cpu",
+    "cuda_available": false,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "TFLite export failed: No module named 'onnx_tf'"
+  ]
+}
