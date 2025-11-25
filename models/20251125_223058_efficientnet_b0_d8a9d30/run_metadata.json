@@ -1,0 +1,66 @@
+{
+  "model": {
+    "name": "efficientnet_b0",
+    "backbone": "tf_efficientnet_b0",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 4,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 6,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 4,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Reference model used for production ensemble"
+  },
+  "metrics": {
+    "val_accuracy": 0.7243107769423559,
+    "val_macro_f1": 0.7049258609624661,
+    "val_macro_recall": 0.710331668132711
+  },
+  "total_epochs": 8,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 4,
+      "metrics": {
+        "val_accuracy": 0.6892230576441103,
+        "val_macro_f1": 0.6626474246251384,
+        "val_macro_recall": 0.6739987856791847
+      },
+      "batch_size": 8
+    },
+    {
+      "phase": "finetune",
+      "epochs": 6,
+      "metrics": {
+        "val_accuracy": 0.7393483709273183,
+        "val_macro_f1": 0.7197757260902112,
+        "val_macro_recall": 0.7271002512297295
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.8.0+cpu",
+    "cuda_available": false,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "TFLite export failed: No module named 'onnx_tf'"
+  ]
+}
