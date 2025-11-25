@@ -1,0 +1,56 @@
+{
+  "model": {
+    "name": "resnet18",
+    "backbone": "resnet18",
+    "image_size": 224,
+    "batch_size": 8,
+    "learning_rate": 0.0008,
+    "weight_decay": 0.0001,
+    "phases": [
+      {
+        "type": "head",
+        "epochs": 4,
+        "freeze_backbone": true,
+        "unfreeze_blocks": null,
+        "learning_rate": null
+      },
+      {
+        "type": "finetune",
+        "epochs": 5,
+        "freeze_backbone": false,
+        "unfreeze_blocks": 3,
+        "learning_rate": null
+      }
+    ],
+    "notes": "Robust classic architecture for ensemble diversity"
+  },
+  "metrics": {
+    "val_accuracy": 0.07894736842105263,
+    "val_macro_f1": 0.04613807245386193,
+    "val_macro_recall": 0.08771929824561403
+  },
+  "total_epochs": 1,
+  "phase_history": [
+    {
+      "phase": "head",
+      "epochs": 1,
+      "metrics": {
+        "val_accuracy": 0.05263157894736842,
+        "val_macro_f1": 0.025837320574162683,
+        "val_macro_recall": 0.07017543859649122
+      },
+      "batch_size": 8
+    }
+  ],
+  "batch_size": 8,
+  "forced_cpu": false,
+  "hardware": {
+    "torch_version": "2.8.0+cpu",
+    "cuda_available": false,
+    "memory_gb": 16.976543744,
+    "cpu_count": 12
+  },
+  "export_errors": [
+    "TFLite export failed: No module named 'onnx_tf'"
+  ]
+}

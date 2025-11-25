@@ -29,3 +29,15 @@
 2025-11-25 01:59:27 | INFO | Phase 'head' complete | Acc=0.6391 | F1=0.6190
 2025-11-25 02:13:22 | INFO | Phase 'finetune' complete | Acc=0.6742 | F1=0.6495
 2025-11-25 02:14:11 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-26 01:06:06 | INFO | Starting run for model 'efficientnet_b0' (fast_test=True)
+2025-11-26 01:06:07 | INFO | ✓ Model created: tf_efficientnet_b0
+2025-11-26 01:07:57 | INFO | Phase 'head' complete | Acc=0.1579 | F1=0.1175
+2025-11-26 01:08:29 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-26 01:08:29 | INFO | Starting run for model 'mobilenet_v3_small' (fast_test=True)
+2025-11-26 01:08:30 | INFO | ✓ Model created: mobilenetv3_small
+2025-11-26 01:10:23 | INFO | Phase 'head' complete | Acc=0.1579 | F1=0.1353
+2025-11-26 01:10:47 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
+2025-11-26 01:10:48 | INFO | Starting run for model 'resnet18' (fast_test=True)
+2025-11-26 01:10:48 | INFO | ✓ Model created: resnet18
+2025-11-26 01:12:59 | INFO | Phase 'head' complete | Acc=0.0526 | F1=0.0258
+2025-11-26 01:13:23 | WARNING | pytorch-grad-cam not available; skipping Grad-CAM generation
