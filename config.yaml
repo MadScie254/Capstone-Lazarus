@@ -6,36 +6,6 @@
 seed: 42
 device: "auto"  # auto, cpu, cuda, mps
 
-# Model Configuration  
-backbone: "tf_efficientnet_b0"   # timm models: tf_efficientnet_b0, resnet18, mobilenetv3_small_100
-num_classes: 19
-pretrained: true
-
-# Data Configuration - SMART COMPROMISE
-image_size: 160             # SMART: Medium images (160 vs 224)
-batch_size: 24              # SMART: Large batches for speed
-num_workers: 2              # Keep low to avoid bottleneck
-pin_memory: true
-
-# Training Configuration - SMART COMPROMISE  
-epochs: 3                   # SMART: 3 epochs for better accuracy
-lr: 2e-2                    # SMART: High but not extreme learning rate
-weight_decay: 1e-4          # Normal weight decay
-optimizer: "AdamW"
-scheduler: "cosine"         # Keep cosine for better convergence
-warmup_epochs: 0            # No warmup for speed
-
-# Performance Optimization
-use_amp: true              # Automatic Mixed Precision for speed/memory
-gradient_accumulation_steps: 1
-use_ema: true              # Exponential Moving Average
-ema_decay: 0.9999
-
-# Transfer Learning Strategy
-freeze_backbone: true      # Start with frozen backbone
-unfreeze_after_epochs: 10  # Unfreeze for fine-tuning
-fine_tune_lr_factor: 0.1   # LR reduction for fine-tuning
-
 # Regularization
 dropout_rate: 0.3
 label_smoothing: 0.1
